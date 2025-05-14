@@ -40,19 +40,6 @@
             <section id="smm-agent" class="agent-section active">
                 <h2 class="section-title">Social Media Marketing <span class="accent">Agent</span></h2>
                 <div class="panel-container">
-                    <!-- Competitor Agent -->
-                    <div class="agent-list-item" data-agent="competitor">
-                        <div class="agent-list-header">
-                            <div>
-                                <h3>
-                                    <div class="agent-icon">🔍</div>
-                                    Competitor Agent
-                                </h3>
-                                <div class="agent-list-subtext">Analyze competitors' social media strategies</div>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <!-- Social Media Calendar Agent -->
                     <div class="agent-list-item" data-agent="calendar">
                         <div class="agent-list-header">
@@ -62,6 +49,32 @@
                                     Social Media Calendar Agent
                                 </h3>
                                 <div class="agent-list-subtext">Generate optimized posting schedules</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Topic Research Agent -->
+                    <div class="agent-list-item" data-agent="topicresearch">
+                        <div class="agent-list-header">
+                            <div>
+                                <h3>
+                                    <div class="agent-icon">📚</div>
+                                    Topic Research Agent
+                                </h3>
+                                <div class="agent-list-subtext">Research trending topics for your content</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SMM Competitor Agent -->
+                    <div class="agent-list-item" data-agent="smmcompetitor">
+                        <div class="agent-list-header">
+                            <div>
+                                <h3>
+                                    <div class="agent-icon">👁️</div>
+                                    SMM Competitor Agent
+                                </h3>
+                                <div class="agent-list-subtext">Analyze social media competitors</div>
                             </div>
                         </div>
                     </div>
@@ -186,72 +199,7 @@
             <div class="chat-content">
                 <div class="chat-welcome">
                     <h3>Welcome to Competitor Agent</h3>
-                    <p>I'll help you analyze your competitors' social media strategies and performance.</p>
-                </div>
-                <div class="agent-message">
-                    <div class="agent-avatar">🔍</div>
-                    <div class="message-content">
-                        Let's get started! Please provide your competitor's social media handles.
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Competitor Social Media Handles</label>
-                    <div class="tag-input-container">
-                        <div class="tag-chips">
-                            <!-- Tags will be added here by JavaScript -->
-                        </div>
-                        <input type="text" class="tag-input" placeholder="Add handle + Enter">
-                    </div>
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">🔍</div>
-                    <div class="message-content">
-                        How frequently would you like to check their posts?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Post Frequency</label>
-                    <div class="slider-container">
-                        <input type="range" min="1" max="30" value="7" class="neon-slider" id="frequency-slider">
-                        <div class="slider-value" id="frequency-value">7 posts/week</div>
-                    </div>
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">🔍</div>
-                    <div class="message-content">
-                        Which engagement metrics are you most interested in?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-metric="likes">Likes</button>
-                        <button class="toggle-btn" data-metric="comments">Comments</button>
-                        <button class="toggle-btn" data-metric="shares">Shares</button>
-                        <button class="toggle-btn" data-metric="saves">Saves</button>
-                    </div>
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">🔍</div>
-                    <div class="message-content">
-                        Would you like to include any ad creatives for analysis?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="dropzone">
-                        <div class="dropzone-content">
-                            <svg class="upload-icon" width="40" height="40" viewBox="0 0 24 24">
-                                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"></path>
-                            </svg>
-                            <p>Drag & drop files or <span class="browse-text">browse</span></p>
-                        </div>
-                        <input type="file" class="file-input" multiple accept="image/*,video/*">
-                    </div>
-                    <div class="file-preview-container">
-                        <!-- File previews will be added here by JavaScript -->
-                    </div>
+                    <p>I'll help you analyze your competitors' social media strategies and performance. Enter a competitor's name or social media handle to get started.</p>
                 </div>
             </div>
             <div class="chat-input-container">
@@ -430,6 +378,84 @@
             </div>
         </div>
         
+        <!-- Topic Research Agent Chat -->
+        <div id="topicresearch-agent-chat" class="agent-chat" data-agent="topicresearch">
+            <div class="chat-header">
+                <h3>
+                    <div class="agent-icon">📚</div>
+                    Topic Research Agent
+                </h3>
+                <div class="chat-controls">
+                    <button class="minimize-chat-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="2" viewBox="0 0 14 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M1 1h12"></path>
+                        </svg>
+                    </button>
+                    <button class="close-chat-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M18 6L6 18M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-content">
+                <div class="chat-welcome">
+                    <h3>Welcome to Topic Research Agent</h3>
+                    <p>I'll help you discover trending topics and content ideas for your social media strategy.</p>
+                </div>
+                <div class="agent-message">
+                    <div class="agent-avatar">📚</div>
+                    <div class="message-content">
+                        What can I help you research today? Just type your industry or topic of interest.
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" placeholder="Type your message...">
+                <button class="chat-send-btn">
+                    <svg class="chat-send-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- SMM Competitor Agent Chat -->
+        <div id="smmcompetitor-agent-chat" class="agent-chat" data-agent="smmcompetitor">
+            <div class="chat-header">
+                <h3>
+                    <div class="agent-icon">👁️</div>
+                    SMM Competitor Agent
+                </h3>
+                <div class="chat-controls">
+                    <button class="minimize-chat-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="2" viewBox="0 0 14 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M1 1h12"></path>
+                        </svg>
+                    </button>
+                    <button class="close-chat-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M18 6L6 18M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-content">
+                <div class="chat-welcome">
+                    <h3>Welcome to SMM Competitor Agent</h3>
+                    <p>I'll help you analyze your competitors on social media. Enter a competitor's social media handle or website to get started.</p>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" placeholder="Type your message...">
+                <button class="chat-send-btn">
+                    <svg class="chat-send-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
         <!-- ICP Agent Chat -->
         <div id="icp-agent-chat" class="agent-chat" data-agent="icp">
             <div class="chat-header">
@@ -506,64 +532,7 @@
             <div class="chat-content">
                 <div class="chat-welcome">
                     <h3>Welcome to Keyword Agent</h3>
-                    <p>I'll help you discover high-performing keywords to improve your SEO ranking.</p>
-                </div>
-                <div class="agent-message">
-                    <div class="agent-avatar">🔑</div>
-                    <div class="message-content">
-                        Let's get started! What's your website name?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <input type="text" class="glowing-input" placeholder="Your website name">
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">🔑</div>
-                    <div class="message-content">
-                        What's your website URL?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <input type="url" class="glowing-input validate-url" placeholder="https://example.com">
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">🔑</div>
-                    <div class="message-content">
-                        Do you have any primary keywords in mind?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="tag-input-container">
-                        <div class="tag-chips">
-                            <!-- Tags will be added here by JavaScript -->
-                        </div>
-                        <input type="text" class="tag-input" placeholder="Add keyword + Enter">
-                    </div>
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">🔑</div>
-                    <div class="message-content">
-                        What industry or niche are you in?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-select">
-                        <select id="keyword-niche-select">
-                            <option value="">Select a niche</option>
-                            <option value="tech">Technology</option>
-                            <option value="fashion">Fashion</option>
-                            <option value="health">Health & Wellness</option>
-                            <option value="finance">Finance</option>
-                            <option value="education">Education</option>
-                            <option value="entertainment">Entertainment</option>
-                            <option value="food">Food & Beverage</option>
-                            <option value="travel">Travel</option>
-                        </select>
-                        <div class="select-arrow"></div>
-                    </div>
+                    <p>I'll help you discover high-performing keywords to improve your SEO ranking. Simply enter your query or domain to get started.</p>
                 </div>
             </div>
             <div class="chat-input-container">
@@ -599,42 +568,7 @@
             <div class="chat-content">
                 <div class="chat-welcome">
                     <h3>Welcome to SEO Competitor Agent</h3>
-                    <p>I'll help you analyze your competitors' SEO strategies and identify opportunities for growth.</p>
-                </div>
-                <div class="agent-message">
-                    <div class="agent-avatar">📊</div>
-                    <div class="message-content">
-                        Let's get started! What's your website name?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <input type="text" class="glowing-input" placeholder="Your website name">
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">📊</div>
-                    <div class="message-content">
-                        What's your website URL?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <input type="url" class="glowing-input validate-url" placeholder="https://example.com">
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">📊</div>
-                    <div class="message-content">
-                        Who are your top competitors?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <input type="text" class="glowing-input auto-suggest" placeholder="Competitor name">
-                </div>
-                <div class="form-group">
-                    <input type="text" class="glowing-input auto-suggest" placeholder="Competitor name">
-                </div>
-                <div class="form-group">
-                    <input type="text" class="glowing-input auto-suggest" placeholder="Competitor name">
+                    <p>I'll help you analyze your competitors' SEO strategies and identify opportunities for growth. Enter your website or a competitor's domain to get started.</p>
                 </div>
             </div>
             <div class="chat-input-container">
