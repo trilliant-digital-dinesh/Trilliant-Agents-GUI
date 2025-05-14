@@ -30,6 +30,67 @@ document.addEventListener('DOMContentLoaded', () => {
     // Track active chat
     let activeChat = null;
     
+    // Initialize Calendar Form elements
+    const uploadDocumentBtn = document.getElementById('upload-document-btn');
+    const documentUploadInput = document.getElementById('document-upload');
+    const calendarInputsForm = document.getElementById('calendar-inputs-form');
+    const submitCalendarInputsBtn = document.getElementById('submit-calendar-inputs-btn');
+    
+    // Initialize On-Page SEO elements
+    const uploadOnpageBtn = document.getElementById('upload-onpage-btn');
+    const onpageDocumentInput = document.getElementById('onpage-document-upload');
+    
+    // Add click event to the document upload labels
+    document.querySelectorAll('.upload-label').forEach(label => {
+        label.addEventListener('click', (e) => {
+            // Find the associated file input and click it
+            const fileInput = label.parentElement.querySelector('.file-input');
+            if (fileInput) {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
+    });
+    
+    // Add file input change event handlers to show selected file name and auto-upload
+    document.querySelectorAll('.file-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const label = e.target.parentElement.querySelector('.upload-label');
+            if (label && e.target.files.length > 0) {
+                const fileNameSpan = label.querySelector('span');
+                if (fileNameSpan) {
+                    fileNameSpan.textContent = `Selected: ${e.target.files[0].name}`;
+                }
+                
+                // Make the upload button more prominent
+                const uploadBtn = e.target.parentElement.querySelector('.neon-button');
+                if (uploadBtn) {
+                    uploadBtn.style.background = 'rgba(14, 165, 233, 0.4)';
+                    uploadBtn.style.color = 'white';
+                    
+                    // Auto-trigger the upload button click
+                    setTimeout(() => {
+                        uploadBtn.click();
+                    }, 500);
+                }
+            }
+        });
+    });
+    
+    // Set up Calendar Form event listeners
+    if (uploadDocumentBtn && documentUploadInput) {
+        uploadDocumentBtn.addEventListener('click', handleDocumentUpload);
+    }
+    
+    if (submitCalendarInputsBtn) {
+        submitCalendarInputsBtn.addEventListener('click', submitCalendarInputs);
+    }
+    
+    // Set up On-Page SEO event listeners
+    if (uploadOnpageBtn && onpageDocumentInput) {
+        uploadOnpageBtn.addEventListener('click', handleOnpageUpload);
+    }
+    
     // Open chat when clicking on an agent (not disabled ones)
     agentListItems.forEach(item => {
         if (!item.classList.contains('disabled')) {
@@ -154,6 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'smmcompetitor':
                     agentEmoji = '👁️';
                     break;
+                case 'onpage':
+                    agentEmoji = '🔍';
+                    break;
             }
             
             typingIndicator.innerHTML = `
@@ -203,26 +267,47 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Separate function for simulated responses
     function simulateAgentResponse(agentType, messageText, typingIndicator, chatContent, agentEmoji) {
+        // Simulate typing delay
         setTimeout(() => {
             // Remove typing indicator
             chatContent.removeChild(typingIndicator);
             
-            // Add agent response
-            const agentMessage = document.createElement('div');
-            agentMessage.className = 'agent-message';
+            // Create agent response
+            const agentResponse = document.createElement('div');
+            agentResponse.className = 'agent-message';
             
-            let responseText = `I'm processing your request. I'll analyze "${messageText}" and provide insights shortly.`;
+            let responseText = '';
             
             // Different responses based on agent type
-            if (agentType === 'competitor') {
+            if (agentType === 'calendar') {
+                // For the calendar agent, ask to upload document first instead of previous responses
+                responseText = 'Please upload a document to get started with your social media calendar planning.';
+                
+                agentResponse.innerHTML = `
+                    <div class="agent-avatar">${agentEmoji}</div>
+                    <div class="message-content">${responseText}</div>
+                `;
+                
+                chatContent.appendChild(agentResponse);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                return;
+            } else if (agentType === 'onpage') {
+                // For the on-page SEO agent, ask to upload excel file
+                responseText = 'Please upload an Excel file with your website data to begin the on-page SEO analysis.';
+                
+                agentResponse.innerHTML = `
+                    <div class="agent-avatar">${agentEmoji}</div>
+                    <div class="message-content">${responseText}</div>
+                `;
+                
+                chatContent.appendChild(agentResponse);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                return;
+            } else if (agentType === 'competitor') {
                 if (messageText.toLowerCase().includes('competitor') || messageText.toLowerCase().includes('competition')) {
                     responseText = `I've analyzed your competitor's social media activity. They post approximately 3 times per week with an average engagement rate of 4.2%. Their most successful content types are video tutorials and industry news updates.`;
                 } else if (messageText.toLowerCase().includes('suggest') || messageText.toLowerCase().includes('recommend')) {
                     responseText = `Based on your industry and competitor analysis, I recommend focusing on creating more video content, posting consistently 4-5 times per week, and engaging with industry hashtags like #digitalmarketing and #growthhacking.`;
-                }
-            } else if (agentType === 'calendar') {
-                if (messageText.toLowerCase().includes('schedule') || messageText.toLowerCase().includes('calendar')) {
-                    responseText = `I've created an optimized posting schedule for your social media accounts. For best engagement, post on Instagram on Tuesdays and Thursdays at 12-2pm, LinkedIn on Wednesdays at 9am, and Twitter daily at 8am and 5pm.`;
                 }
             } else if (agentType === 'keyword') {
                 responseText = `Based on your website, I recommend focusing on these keywords: "digital marketing automation" (difficulty: medium, volume: high), "marketing workflow automation" (difficulty: low, volume: medium), and "social media management tools" (difficulty: medium, volume: very high).`;
@@ -232,12 +317,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 responseText = `Based on your industry, I recommend these trending topics: "How AI is transforming marketing", "Sustainable brand strategies", and "User-generated content campaigns". These topics are showing high engagement across social platforms.`;
             }
             
-            agentMessage.innerHTML = `
+            agentResponse.innerHTML = `
                 <div class="agent-avatar">${agentEmoji}</div>
                 <div class="message-content">${responseText}</div>
             `;
             
-            chatContent.appendChild(agentMessage);
+            chatContent.appendChild(agentResponse);
             chatContent.scrollTop = chatContent.scrollHeight;
         }, 1500);
     }
@@ -1996,5 +2081,342 @@ document.addEventListener('DOMContentLoaded', () => {
     // Helper function to escape regex special characters
     function escapeRegExp(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Function to handle document upload for the Calendar Agent
+    function handleDocumentUpload() {
+        const chatWindow = document.getElementById('calendar-agent-chat');
+        const chatContent = chatWindow.querySelector('.chat-content');
+        
+        if (!documentUploadInput.files || documentUploadInput.files.length === 0) {
+            // Create error message if no file is selected
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">📅</div>
+                <div class="message-content">Please select a document to upload.</div>
+            `;
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+            return;
+        }
+        
+        const file = documentUploadInput.files[0];
+        console.log('Calendar Agent: Selected file:', file.name, 'Type:', file.type, 'Size:', file.size);
+        
+        // Add user message showing the file being uploaded
+        const userMessage = document.createElement('div');
+        userMessage.className = 'user-message';
+        userMessage.innerHTML = `
+            <div class="user-avatar">👤</div>
+            <div class="message-content">Uploading file: ${file.name}</div>
+        `;
+        chatContent.appendChild(userMessage);
+        
+        const formData = new FormData();
+        
+        // Add the file with the key 'file' which is commonly expected by APIs
+        formData.append('file', file);
+        // Also add with 'document' to maintain compatibility with existing code
+        formData.append('document', file);
+        
+        // Add typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'agent-message typing-indicator';
+        typingIndicator.innerHTML = `
+            <div class="agent-avatar">📅</div>
+            <div class="message-content">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        `;
+        chatContent.appendChild(typingIndicator);
+        chatContent.scrollTop = chatContent.scrollHeight;
+        
+        // Send document to webhook
+        const uploadWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/upload';
+        console.log('Calendar Agent: Sending file to webhook:', uploadWebhookUrl);
+        
+        fetch(uploadWebhookUrl, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Calendar Agent: Document upload response status:', response.status);
+            return response.json().catch(e => {
+                console.error('Calendar Agent: Error parsing JSON:', e);
+                return { error: 'Invalid JSON response' };
+            });
+        })
+        .then(data => {
+            console.log('Calendar Agent: Document upload response data:', data);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Add success message
+            const successMessage = document.createElement('div');
+            successMessage.className = 'agent-message';
+            successMessage.innerHTML = `
+                <div class="agent-avatar">📅</div>
+                <div class="message-content">
+                    Document "${file.name}" has been uploaded successfully! Please fill out the form below to continue.
+                </div>
+            `;
+            chatContent.appendChild(successMessage);
+            
+            // Show the inputs form
+            if (calendarInputsForm) {
+                calendarInputsForm.style.display = 'block';
+            }
+            
+            chatContent.scrollTop = chatContent.scrollHeight;
+        })
+        .catch(error => {
+            console.error('Calendar Agent: Error uploading document:', error);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Show error message
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">📅</div>
+                <div class="message-content">
+                    There was an error uploading your document. Please try again.
+                </div>
+            `;
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        });
+    }
+    
+    // Function to submit calendar form inputs
+    function submitCalendarInputs() {
+        const chatWindow = document.getElementById('calendar-agent-chat');
+        const chatContent = chatWindow.querySelector('.chat-content');
+        
+        // Get form values
+        const niche = document.getElementById('niche-input').value;
+        const audience = document.getElementById('audience-input').value;
+        const tone = document.getElementById('tone-input').value;
+        const platforms = document.getElementById('platforms-input').value;
+        const duration = document.getElementById('duration-input').value;
+        const company = document.getElementById('company-input').value;
+        
+        // Prepare form data
+        const formData = {
+            niche: niche,
+            audience: audience,
+            tone: tone,
+            platforms: platforms,
+            duration: duration,
+            company: company
+        };
+        
+        // Add typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'agent-message typing-indicator';
+        typingIndicator.innerHTML = `
+            <div class="agent-avatar">📅</div>
+            <div class="message-content">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        `;
+        chatContent.appendChild(typingIndicator);
+        chatContent.scrollTop = chatContent.scrollHeight;
+        
+        // Submit form data to webhook
+        const calendarInputWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/Calender-Input';
+        
+        fetch(calendarInputWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            console.log('Calendar input response status:', response.status);
+            return response.json().catch(e => {
+                console.error('Error parsing JSON:', e);
+                return { error: 'Invalid JSON response' };
+            });
+        })
+        .then(data => {
+            console.log('Calendar input response:', data);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Hide the form after submission
+            if (calendarInputsForm) {
+                calendarInputsForm.style.display = 'none';
+            }
+            
+            // Add success message with webhook response
+            const responseMessage = document.createElement('div');
+            responseMessage.className = 'agent-message';
+            
+            // Use the response from webhook or fallback to a default message
+            const responseContent = data.response || data.message || data.text || 
+                'Calender has been generated, please check your Google Sheet.';
+            
+            responseMessage.innerHTML = `
+                <div class="agent-avatar">📅</div>
+                <div class="message-content">${formatResponse(responseContent)}</div>
+            `;
+            
+            chatContent.appendChild(responseMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        })
+        .catch(error => {
+            console.error('Error submitting calendar inputs:', error);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Show error message
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">📅</div>
+                <div class="message-content">
+                    There was an error processing your request. Please try again.
+                </div>
+            `;
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        });
+    }
+
+    // Function to handle On-Page SEO upload
+    function handleOnpageUpload() {
+        const chatWindow = document.getElementById('onpage-agent-chat');
+        const chatContent = chatWindow.querySelector('.chat-content');
+        
+        if (!onpageDocumentInput.files || onpageDocumentInput.files.length === 0) {
+            // Create error message if no file is selected
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">🔍</div>
+                <div class="message-content">Please select a file to upload.</div>
+            `;
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+            return;
+        }
+        
+        const file = onpageDocumentInput.files[0];
+        console.log('On-Page SEO Agent: Selected file:', file.name, 'Type:', file.type, 'Size:', file.size);
+        
+        // Add user message showing the file being uploaded
+        const userMessage = document.createElement('div');
+        userMessage.className = 'user-message';
+        userMessage.innerHTML = `
+            <div class="user-avatar">👤</div>
+            <div class="message-content">Uploading file: ${file.name}</div>
+        `;
+        chatContent.appendChild(userMessage);
+        
+        const formData = new FormData();
+        
+        // Add the file with the key 'file' which is commonly expected by APIs
+        formData.append('file', file);
+        // Also add with 'document' to maintain compatibility with existing code
+        formData.append('document', file);
+        
+        // Add typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'agent-message typing-indicator';
+        typingIndicator.innerHTML = `
+            <div class="agent-avatar">🔍</div>
+            <div class="message-content">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        `;
+        chatContent.appendChild(typingIndicator);
+        chatContent.scrollTop = chatContent.scrollHeight;
+        
+        // Send document to webhook - using the correct On-Page SEO webhook
+        const uploadWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/On-Page';
+        console.log('On-Page SEO Agent: Sending file to webhook:', uploadWebhookUrl);
+        
+        fetch(uploadWebhookUrl, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('On-Page SEO Agent: Document upload response status:', response.status);
+            return response.json().catch(e => {
+                console.error('On-Page SEO Agent: Error parsing JSON:', e);
+                return { error: 'Invalid JSON response' };
+            });
+        })
+        .then(data => {
+            console.log('On-Page SEO Agent: Document upload response data:', data);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Add success message with response data
+            const successMessage = document.createElement('div');
+            successMessage.className = 'agent-message';
+            
+            // Use the response from webhook or fallback to a default message
+            const responseContent = data.response || data.message || data.text || 
+                `Your On-Page SEO analysis of "${file.name}" is complete. Here are the results:`;
+            
+            successMessage.innerHTML = `
+                <div class="agent-avatar">🔍</div>
+                <div class="message-content">${formatResponse(responseContent)}</div>
+            `;
+            
+            chatContent.appendChild(successMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        })
+        .catch(error => {
+            console.error('On-Page SEO Agent: Error uploading document:', error);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Show error message
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">🔍</div>
+                <div class="message-content">
+                    There was an error processing your On-Page SEO analysis. Please try again.
+                </div>
+            `;
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        });
     }
 }); 

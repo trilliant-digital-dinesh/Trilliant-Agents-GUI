@@ -122,6 +122,19 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- On-Page SEO Agent -->
+                    <div class="agent-list-item" data-agent="onpage">
+                        <div class="agent-list-header">
+                            <div>
+                                <h3>
+                                    <div class="agent-icon">🔍</div>
+                                    On-Page SEO Agent
+                                </h3>
+                                <div class="agent-list-subtext">Analyze on-page SEO issues and opportunities</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -240,132 +253,56 @@
                 <div class="agent-message">
                     <div class="agent-avatar">📅</div>
                     <div class="message-content">
-                        Let's start by understanding your niche. What industry are you in?
+                        Please upload a document to get started with your social media calendar planning.
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="custom-select">
-                        <select id="niche-select">
-                            <option value="">Select a niche</option>
-                            <option value="tech">Technology</option>
-                            <option value="fashion">Fashion</option>
-                            <option value="health">Health & Wellness</option>
-                            <option value="finance">Finance</option>
-                            <option value="education">Education</option>
-                            <option value="entertainment">Entertainment</option>
-                            <option value="food">Food & Beverage</option>
-                            <option value="travel">Travel</option>
-                        </select>
-                        <div class="select-arrow"></div>
-                    </div>
+                    <form id="calendar-upload-form" enctype="multipart/form-data">
+                        <label for="document-upload" class="upload-label">
+                            <div class="upload-icon">📄</div>
+                            <span>Select Document</span>
+                        </label>
+                        <input type="file" id="document-upload" class="file-input" accept="*">
+                        <button type="button" id="upload-document-btn" class="neon-button">Upload Document</button>
+                    </form>
                 </div>
                 
-                <div class="agent-message">
-                    <div class="agent-avatar">📅</div>
-                    <div class="message-content">
-                        Who is your target audience?
+                <!-- This form will be shown after document upload -->
+                <div id="calendar-inputs-form" class="form-group" style="display: none;">
+                    <h4>SMM Calender</h4>
+                    <p>Fill out the form</p>
+                    
+                    <div class="input-field">
+                        <label for="niche-input">Niche</label>
+                        <input type="text" id="niche-input" class="glowing-input">
                     </div>
-                </div>
-                <div class="form-group">
-                    <div class="persona-selector">
-                        <div class="persona-option" data-persona="gen-z">
-                            <div class="persona-icon">👾</div>
-                            <span>Gen Z</span>
-                        </div>
-                        <div class="persona-option" data-persona="millennial">
-                            <div class="persona-icon">🧠</div>
-                            <span>Millennial</span>
-                        </div>
-                        <div class="persona-option" data-persona="gen-x">
-                            <div class="persona-icon">💼</div>
-                            <span>Gen X</span>
-                        </div>
-                        <div class="persona-option" data-persona="boomer">
-                            <div class="persona-icon">🏆</div>
-                            <span>Boomer</span>
-                        </div>
+                    
+                    <div class="input-field">
+                        <label for="audience-input">Audience</label>
+                        <input type="text" id="audience-input" class="glowing-input">
                     </div>
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">📅</div>
-                    <div class="message-content">
-                        What tone would you like to use in your posts?
+                    
+                    <div class="input-field">
+                        <label for="tone-input">Tone</label>
+                        <input type="text" id="tone-input" class="glowing-input">
                     </div>
-                </div>
-                <div class="form-group">
-                    <div class="tone-selector">
-                        <div class="tone-option" data-tone="professional">
-                            <div class="tone-icon">👔</div>
-                            <span>Professional</span>
-                        </div>
-                        <div class="tone-option" data-tone="casual">
-                            <div class="tone-icon">😊</div>
-                            <span>Casual</span>
-                        </div>
-                        <div class="tone-option" data-tone="humorous">
-                            <div class="tone-icon">😂</div>
-                            <span>Humorous</span>
-                        </div>
-                        <div class="tone-option" data-tone="inspirational">
-                            <div class="tone-icon">✨</div>
-                            <span>Inspirational</span>
-                        </div>
+                    
+                    <div class="input-field">
+                        <label for="platforms-input">Platforms</label>
+                        <input type="text" id="platforms-input" class="glowing-input">
                     </div>
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">📅</div>
-                    <div class="message-content">
-                        Which social media platforms will you be posting on?
+                    
+                    <div class="input-field">
+                        <label for="duration-input">Duration</label>
+                        <input type="text" id="duration-input" class="glowing-input">
                     </div>
-                </div>
-                <div class="form-group">
-                    <div class="platform-selector">
-                        <div class="platform-option" data-platform="facebook">
-                            <div class="platform-icon fb-icon"></div>
-                            <span>Facebook</span>
-                        </div>
-                        <div class="platform-option" data-platform="instagram">
-                            <div class="platform-icon ig-icon"></div>
-                            <span>Instagram</span>
-                        </div>
-                        <div class="platform-option" data-platform="twitter">
-                            <div class="platform-icon tw-icon"></div>
-                            <span>Twitter</span>
-                        </div>
-                        <div class="platform-option" data-platform="linkedin">
-                            <div class="platform-icon li-icon"></div>
-                            <span>LinkedIn</span>
-                        </div>
-                        <div class="platform-option" data-platform="tiktok">
-                            <div class="platform-icon tt-icon"></div>
-                            <span>TikTok</span>
-                        </div>
+                    
+                    <div class="input-field">
+                        <label for="company-input">Company</label>
+                        <input type="text" id="company-input" class="glowing-input">
                     </div>
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">📅</div>
-                    <div class="message-content">
-                        How many weeks would you like to plan in advance?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="range-slider-container">
-                        <input type="range" min="1" max="12" value="4" class="neon-slider" id="duration-slider">
-                        <div class="slider-value" id="duration-value">4 weeks</div>
-                    </div>
-                </div>
-                
-                <div class="agent-message">
-                    <div class="agent-avatar">📅</div>
-                    <div class="message-content">
-                        What's your company name?
-                    </div>
-                </div>
-                <div class="form-group">
-                    <input type="text" class="glowing-input" placeholder="Enter company name">
+                    
+                    <button type="button" id="submit-calendar-inputs-btn" class="neon-button">Submit</button>
                 </div>
             </div>
             <div class="chat-input-container">
@@ -569,6 +506,58 @@
                 <div class="chat-welcome">
                     <h3>Welcome to SEO Competitor Agent</h3>
                     <p>I'll help you analyze your competitors' SEO strategies and identify opportunities for growth. Enter your website or a competitor's domain to get started.</p>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" placeholder="Type your message...">
+                <button class="chat-send-btn">
+                    <svg class="chat-send-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- On-Page SEO Agent Chat -->
+        <div id="onpage-agent-chat" class="agent-chat" data-agent="onpage">
+            <div class="chat-header">
+                <h3>
+                    <div class="agent-icon">🔍</div>
+                    On-Page SEO Agent
+                </h3>
+                <div class="chat-controls">
+                    <button class="minimize-chat-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="2" viewBox="0 0 14 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M1 1h12"></path>
+                        </svg>
+                    </button>
+                    <button class="close-chat-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M18 6L6 18M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-content">
+                <div class="chat-welcome">
+                    <h3>Welcome to On-Page SEO Agent</h3>
+                    <p>I'll help you identify on-page SEO issues and opportunities. Upload an Excel file with your website data to get started.</p>
+                </div>
+                <div class="agent-message">
+                    <div class="agent-avatar">🔍</div>
+                    <div class="message-content">
+                        Please upload an Excel file with your website data to begin the on-page SEO analysis.
+                    </div>
+                </div>
+                <div class="form-group">
+                    <form id="onpage-upload-form" enctype="multipart/form-data">
+                        <label for="onpage-document-upload" class="upload-label">
+                            <div class="upload-icon">📊</div>
+                            <span>Select Excel File</span>
+                        </label>
+                        <input type="file" id="onpage-document-upload" class="file-input" accept="*">
+                        <button type="button" id="upload-onpage-btn" class="neon-button">Upload File</button>
+                    </form>
                 </div>
             </div>
             <div class="chat-input-container">
