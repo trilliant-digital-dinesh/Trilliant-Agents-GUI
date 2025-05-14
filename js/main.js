@@ -148,6 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'seocompetitor':
                     agentEmoji = '📊';
                     break;
+                case 'topicresearch':
+                    agentEmoji = '📚';
+                    break;
+                case 'smmcompetitor':
+                    agentEmoji = '👁️';
+                    break;
             }
             
             typingIndicator.innerHTML = `
@@ -168,10 +174,25 @@ document.addEventListener('DOMContentLoaded', () => {
             if (agentType === 'icp') {
                 analyzeWebsite(messageText, chatWindow, chatContent);
             } 
-            else if (agentType === 'keyword' || agentType === 'seocompetitor') {
-                // For future integration, you can add the keyword and SEO competitor API calls here
-                // For now, use simulation
-                simulateAgentResponse(agentType, messageText, typingIndicator, chatContent, agentEmoji);
+            else if (agentType === 'topicresearch') {
+                // Connect to topic research webhook
+                sendTopicResearch(messageText, chatWindow, chatContent, typingIndicator);
+            }
+            else if (agentType === 'keyword') {
+                // For keyword agent, use similar approach as topic research
+                sendKeywordResearch(messageText, chatWindow, chatContent, typingIndicator);
+            }
+            else if (agentType === 'smmcompetitor') {
+                // Connect to SMM competitor webhook
+                sendSMMCompetitor(messageText, chatWindow, chatContent, typingIndicator);
+            }
+            else if (agentType === 'competitor') {
+                // Redirect to SMM competitor webhook for consistency
+                sendCompetitorAnalysis(messageText, chatWindow, chatContent, typingIndicator);
+            }
+            else if (agentType === 'seocompetitor') {
+                // Connect to SEO competitor webhook
+                sendSEOCompetitor(messageText, chatWindow, chatContent, typingIndicator);
             }
             else {
                 // For other agent types, use simulation
@@ -207,6 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 responseText = `Based on your website, I recommend focusing on these keywords: "digital marketing automation" (difficulty: medium, volume: high), "marketing workflow automation" (difficulty: low, volume: medium), and "social media management tools" (difficulty: medium, volume: very high).`;
             } else if (agentType === 'seocompetitor') {
                 responseText = `I've analyzed your competitors and found they're ranking for keywords you're missing. Top opportunities: "automated social posting" (low competition), "marketing dashboard tools" (medium traffic), and "social analytics platform" (high conversion potential).`;
+            } else if (agentType === 'topicresearch') {
+                responseText = `Based on your industry, I recommend these trending topics: "How AI is transforming marketing", "Sustainable brand strategies", and "User-generated content campaigns". These topics are showing high engagement across social platforms.`;
             }
             
             agentMessage.innerHTML = `
@@ -916,7 +939,8 @@ document.addEventListener('DOMContentLoaded', () => {
             agentMessage.className = 'agent-message';
             
             // Extract the text from the response - check for data.output first
-            const responseText = data.output || data.json?.text || data.text || 'Analysis complete! I\'ve identified the ideal customer profile for your business.';
+            let responseContent = data.output || data.json?.text || data.text || 'Analysis complete! I\'ve identified the ideal customer profile for your business.';
+            const responseText = formatResponse(responseContent);
             
             agentMessage.innerHTML = `
                 <div class="agent-avatar">👥</div>
@@ -955,5 +979,1022 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (_) {
             return false;
         }
+    }
+
+    // Function to handle Topic Research Agent
+    function sendTopicResearch(messageText, chatWindow, chatContent, typingIndicator) {
+        // Call n8n webhook - using the provided webhook URL
+        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/topic-research';
+        
+        // Prepare the data to send to n8n - simplified to just use the message
+        const requestData = {
+            message: messageText,
+            userInput: {
+                query: messageText,
+                timestamp: new Date().toISOString()
+            }
+        };
+        
+        console.log('Sending data to Topic Research Agent:', requestData);
+        
+        // Send request to n8n
+        fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            console.log('Webhook response status:', response.status);
+            return response.json().catch(e => {
+                console.error('Error parsing JSON:', e);
+                return { error: 'Invalid JSON response' };
+            });
+        })
+        .then(data => {
+            console.log('Topic Research Data:', data);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Add agent response from n8n
+            const agentMessage = document.createElement('div');
+            agentMessage.className = 'agent-message';
+            
+            // Extract the response text from the data
+            let responseText;
+            
+            if (data.error || data.code) {
+                // If there's an error or the webhook returned an error code
+                console.error('Webhook error:', data);
+                
+                // Fallback to simulated response
+                responseText = getSimulatedResponse(messageText);
+            } else {
+                // Use the response exactly as received from the webhook
+                const responseContent = data.response || data.output || data.text || getSimulatedResponse(messageText);
+                responseText = formatResponse(responseContent);
+            }
+            
+            agentMessage.innerHTML = `
+                <div class="agent-avatar">📚</div>
+                <div class="message-content">${responseText}</div>
+            `;
+            
+            chatContent.appendChild(agentMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        })
+        .catch(error => {
+            console.error('Error connecting to topic research webhook:', error);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Show fallback response with simulated content
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            
+            const fallbackResponse = getSimulatedResponse(messageText);
+            const formattedResponse = formatResponse(fallbackResponse);
+            
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">📚</div>
+                <div class="message-content">${formattedResponse}</div>
+            `;
+            
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        });
+    }
+
+    // Helper function to generate simulated responses when the webhook is unavailable
+    function getSimulatedResponse(messageText) {
+        const topic = messageText.toLowerCase();
+        
+        if (topic.includes('tech') || topic.includes('technology') || topic.includes('software')) {
+            return `Based on my research of tech trends, here are some hot topics:<br><br>
+                1. Generative AI implementation in business workflows<br>
+                2. Edge computing for faster IoT applications<br>
+                3. Cybersecurity for remote work environments<br>
+                4. Sustainable technology and green computing<br>
+                5. Web3 applications in traditional industries`;
+        } 
+        else if (topic.includes('marketing') || topic.includes('digital marketing')) {
+            return `Here are trending topics in digital marketing:<br><br>
+                1. AI-powered personalization strategies<br>
+                2. Zero-party data collection methods<br>
+                3. Short-form video content optimization<br>
+                4. Voice search optimization techniques<br>
+                5. Sustainability messaging in brand communications`;
+        }
+        else if (topic.includes('health') || topic.includes('wellness') || topic.includes('fitness')) {
+            return `Trending health and wellness topics include:<br><br>
+                1. Metabolic health optimization<br>
+                2. Mind-body wellness integration<br>
+                3. Sleep optimization techniques<br>
+                4. Personalized nutrition planning<br>
+                5. Community-based fitness programs`;
+        }
+        else if (topic.includes('finance') || topic.includes('money') || topic.includes('investing')) {
+            return `Current trending financial topics include:<br><br>
+                1. Sustainable investing frameworks<br>
+                2. Decentralized finance adoption<br>
+                3. Inflation hedging strategies<br>
+                4. Financial literacy education<br>
+                5. AI-powered personal finance tools`;
+        }
+        else {
+            return `Based on my research for "${messageText}", here are some trending topics:<br><br>
+                1. Innovative approaches to sustainability in this field<br>
+                2. AI and automation integration opportunities<br>
+                3. Community building and audience engagement strategies<br>
+                4. Data-driven decision making frameworks<br>
+                5. Cross-platform content strategies for maximum impact`;
+        }
+    }
+
+    // Platform selector functionality
+    const platformOptions = document.querySelectorAll('.platform-option');
+    
+    platformOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            option.classList.toggle('active');
+        });
+    });
+    
+    // Specificity toggle functionality
+    const specificityButtons = document.querySelectorAll('.toggle-btn[data-specificity]');
+    
+    specificityButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all buttons in the group
+            btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            btn.classList.add('active');
+        });
+    });
+
+    // Function to handle Keyword Agent
+    function sendKeywordResearch(messageText, chatWindow, chatContent, typingIndicator) {
+        // Use the specified webhook URL
+        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/Keyword-SEO';
+        
+        // Prepare the data to send to n8n - just pass the raw message
+        const requestData = {
+            chatInput: messageText  // Using the same format as the ICP agent
+        };
+        
+        console.log('Sending data to Keyword Agent:', requestData);
+        
+        // Send request to the webhook
+        fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            console.log('Keyword Agent webhook response status:', response.status);
+            return response.json().catch(e => {
+                console.error('Error parsing JSON:', e);
+                return { error: 'Invalid JSON response' };
+            });
+        })
+        .then(data => {
+            console.log('Keyword Agent Data:', data);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Add agent response from webhook
+            const agentMessage = document.createElement('div');
+            agentMessage.className = 'agent-message';
+            
+            // Use whatever response comes from the webhook
+            let responseText;
+            
+            if (data.error || data.code) {
+                // If there's an error or the webhook returned an error code
+                console.error('Webhook error:', data);
+                responseText = 'Sorry, I encountered an error processing your request. Please try again later.';
+            } else {
+                // Use the response exactly as received from the webhook
+                const responseContent = data.output || data.response || data.text || JSON.stringify(data);
+                responseText = formatResponse(responseContent);
+            }
+            
+            agentMessage.innerHTML = `
+                <div class="agent-avatar">🔑</div>
+                <div class="message-content">${responseText}</div>
+            `;
+            
+            chatContent.appendChild(agentMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        })
+        .catch(error => {
+            console.error('Error connecting to keyword webhook:', error);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Show error message
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">🔑</div>
+                <div class="message-content">Sorry, I encountered an error connecting to the keyword research service. Please try again later.</div>
+            `;
+            
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        });
+    }
+
+    // Function to handle SMM Competitor Agent
+    function sendSMMCompetitor(messageText, chatWindow, chatContent, typingIndicator) {
+        // Use the specified webhook URL
+        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SMM-Compitator';
+        
+        // Prepare the data to send to n8n - just pass the raw message
+        const requestData = {
+            chatInput: messageText  // Using the same format as other agents
+        };
+        
+        console.log('Sending data to SMM Competitor Agent:', requestData);
+        
+        // Send request to the webhook
+        fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            console.log('SMM Competitor webhook response status:', response.status);
+            return response.json().catch(e => {
+                console.error('Error parsing JSON:', e);
+                return { error: 'Invalid JSON response' };
+            });
+        })
+        .then(data => {
+            console.log('SMM Competitor Data:', data);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Add agent response from webhook
+            const agentMessage = document.createElement('div');
+            agentMessage.className = 'agent-message';
+            
+            // Use whatever response comes from the webhook
+            let responseText;
+            
+            if (data.error || data.code) {
+                // If there's an error or the webhook returned an error code
+                console.error('Webhook error:', data);
+                responseText = 'Sorry, I encountered an error processing your request. Please try again later.';
+            } else {
+                // Use the response exactly as received from the webhook
+                const responseContent = data.output || data.response || data.text || JSON.stringify(data);
+                responseText = formatResponse(responseContent);
+            }
+            
+            agentMessage.innerHTML = `
+                <div class="agent-avatar">👁️</div>
+                <div class="message-content">${responseText}</div>
+            `;
+            
+            chatContent.appendChild(agentMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        })
+        .catch(error => {
+            console.error('Error connecting to SMM Competitor webhook:', error);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Show error message
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">👁️</div>
+                <div class="message-content">Sorry, I encountered an error connecting to the SMM Competitor service. Please try again later.</div>
+            `;
+            
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        });
+    }
+
+    // Function to handle original Competitor Agent
+    function sendCompetitorAnalysis(messageText, chatWindow, chatContent, typingIndicator) {
+        // Redirect to the same webhook as SMM Competitor Agent for consistency
+        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SMM-Compitator';
+        
+        // Prepare the data to send to n8n - just pass the raw message
+        const requestData = {
+            chatInput: messageText  // Using the same format as other agents
+        };
+        
+        console.log('Sending data to Competitor Agent (redirected to SMM Competitor):', requestData);
+        
+        // Send request to the webhook
+        fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            console.log('Competitor Agent webhook response status:', response.status);
+            return response.json().catch(e => {
+                console.error('Error parsing JSON:', e);
+                return { error: 'Invalid JSON response' };
+            });
+        })
+        .then(data => {
+            console.log('Competitor Agent Data:', data);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Add agent response from webhook
+            const agentMessage = document.createElement('div');
+            agentMessage.className = 'agent-message';
+            
+            // Use whatever response comes from the webhook
+            let responseText;
+            
+            if (data.error || data.code) {
+                // If there's an error from the webhook, fall back to simulation
+                console.error('Webhook error:', data);
+                responseText = simulateCompetitorResponse(messageText);
+            } else {
+                // Use the response exactly as received from the webhook
+                const responseContent = data.output || data.response || data.text || JSON.stringify(data);
+                responseText = formatResponse(responseContent);
+            }
+            
+            agentMessage.innerHTML = `
+                <div class="agent-avatar">🔍</div>
+                <div class="message-content">${responseText}</div>
+            `;
+            
+            chatContent.appendChild(agentMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        })
+        .catch(error => {
+            console.error('Error connecting to Competitor Agent webhook:', error);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Fall back to simulation
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            
+            const fallbackResponse = simulateCompetitorResponse(messageText);
+            
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">🔍</div>
+                <div class="message-content">${fallbackResponse}</div>
+            `;
+            
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        });
+    }
+    
+    // Helper function to generate simulated competitor responses
+    function simulateCompetitorResponse(messageText) {
+        if (messageText.toLowerCase().includes('competitor') || messageText.toLowerCase().includes('competition')) {
+            return `I've analyzed your competitor's social media activity. They post approximately 3 times per week with an average engagement rate of 4.2%. Their most successful content types are video tutorials and industry news updates.`;
+        } else if (messageText.toLowerCase().includes('suggest') || messageText.toLowerCase().includes('recommend')) {
+            return `Based on your industry and competitor analysis, I recommend focusing on creating more video content, posting consistently 4-5 times per week, and engaging with industry hashtags like #digitalmarketing and #growthhacking.`;
+        } else {
+            return `I've analyzed the competitor "${messageText}". Their content strategy focuses on educational posts (40%), promotional content (30%), and user-generated content (30%). Their highest engagement comes from video content posted on weekdays between 10am-2pm.`;
+        }
+    }
+
+    // Function to handle SEO Competitor Agent
+    function sendSEOCompetitor(messageText, chatWindow, chatContent, typingIndicator) {
+        // Use the specified webhook URL for SEO competitor analysis
+        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SEO-Compitator';
+        
+        // Prepare the data to send to n8n - just pass the raw message
+        const requestData = {
+            chatInput: messageText  // Using the same format as other agents
+        };
+        
+        console.log('Sending data to SEO Competitor Agent:', requestData);
+        
+        // Send request to the webhook
+        fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            console.log('SEO Competitor webhook response status:', response.status);
+            return response.json().catch(e => {
+                console.error('Error parsing JSON:', e);
+                return { error: 'Invalid JSON response' };
+            });
+        })
+        .then(data => {
+            console.log('SEO Competitor Data:', data);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Add agent response from webhook
+            const agentMessage = document.createElement('div');
+            agentMessage.className = 'agent-message';
+            
+            // Use whatever response comes from the webhook
+            let responseText;
+            
+            if (data.error || data.code) {
+                // If there's an error or the webhook returned an error code
+                console.error('Webhook error:', data);
+                responseText = simulateSEOCompetitorResponse(messageText);
+            } else {
+                // Use the response exactly as received from the webhook
+                const responseContent = data.output || data.response || data.text || JSON.stringify(data);
+                responseText = formatResponse(responseContent);
+            }
+            
+            agentMessage.innerHTML = `
+                <div class="agent-avatar">📊</div>
+                <div class="message-content">${responseText}</div>
+            `;
+            
+            chatContent.appendChild(agentMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        })
+        .catch(error => {
+            console.error('Error connecting to SEO Competitor webhook:', error);
+            
+            // Remove typing indicator
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatContent.removeChild(typingIndicator);
+            }
+            
+            // Fall back to simulation
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'agent-message';
+            
+            const fallbackResponse = simulateSEOCompetitorResponse(messageText);
+            
+            errorMessage.innerHTML = `
+                <div class="agent-avatar">📊</div>
+                <div class="message-content">${fallbackResponse}</div>
+            `;
+            
+            chatContent.appendChild(errorMessage);
+            chatContent.scrollTop = chatContent.scrollHeight;
+        });
+    }
+    
+    // Helper function to generate simulated SEO competitor responses
+    function simulateSEOCompetitorResponse(messageText) {
+        return `I've analyzed your competitors and found they're ranking for keywords you're missing. Top opportunities: "automated social posting" (low competition), "marketing dashboard tools" (medium traffic), and "social analytics platform" (high conversion potential).`;
+    }
+
+    // Helper functions for formatting responses
+    function formatResponse(responseData) {
+        if (!responseData) return 'No response received.';
+        
+        try {
+            // If it's a string, check if it's JSON, Markdown or plain text
+            if (typeof responseData === 'string') {
+                // Check if it has table markers
+                if (responseData.includes('|') && 
+                    responseData.split('\n').filter(line => line.trim().startsWith('|')).length >= 2) {
+                    return formatMarkdownResponse(responseData);
+                }
+                
+                // Try to parse as JSON
+                try {
+                    const jsonData = JSON.parse(responseData);
+                    return formatJsonResponse(jsonData);
+                } catch (e) {
+                    // Not JSON, check if it's markdown
+                    if (responseData.includes('#') || responseData.includes('*') || 
+                        responseData.includes('```')) {
+                        return formatMarkdownResponse(responseData);
+                    }
+                    // Plain text, return as is with proper line breaks
+                    return responseData.replace(/\n/g, '<br>');
+                }
+            }
+            
+            // If it's already an object
+            return formatJsonResponse(responseData);
+            
+        } catch (e) {
+            console.error('Error formatting response:', e);
+            return String(responseData).replace(/\n/g, '<br>');
+        }
+    }
+
+    // Format JSON responses
+    function formatJsonResponse(data) {
+        if (!data) return '';
+        
+        // Handle arrays
+        if (Array.isArray(data)) {
+            return formatArrayResponse(data);
+        }
+        
+        // Handle objects with markdown content
+        if (data.markdown || data.md) {
+            return formatMarkdownResponse(data.markdown || data.md);
+        }
+        
+        // Handle objects
+        return formatObjectResponse(data);
+    }
+
+    // Format array data into HTML
+    function formatArrayResponse(array) {
+        if (!array.length) return '[]';
+        
+        // Check if array contains objects (for table display)
+        if (typeof array[0] === 'object' && array[0] !== null) {
+            const keys = Object.keys(array[0]);
+            if (!keys.length) return JSON.stringify(array);
+            
+            // Create HTML table
+            let table = '<table class="response-table"><thead><tr>';
+            keys.forEach(key => {
+                table += `<th>${escapeHtml(key)}</th>`;
+            });
+            table += '</tr></thead><tbody>';
+            
+            // Add rows
+            array.forEach(item => {
+                table += '<tr>';
+                keys.forEach(key => {
+                    const value = item[key] !== undefined && item[key] !== null 
+                        ? String(item[key]) 
+                        : '';
+                    table += `<td>${escapeHtml(value)}</td>`;
+                });
+                table += '</tr>';
+            });
+            
+            table += '</tbody></table>';
+            
+            // Add table styles
+            addResponseTableStyles();
+            
+            return table;
+        }
+        
+        // Simple array - create a list
+        return '<ul class="response-list">' + 
+            array.map(item => `<li>${typeof item === 'object' ? formatJsonResponse(item) : escapeHtml(String(item))}</li>`).join('') + 
+            '</ul>';
+    }
+
+    // Format object data into HTML
+    function formatObjectResponse(obj) {
+        if (!obj || Object.keys(obj).length === 0) return '{}';
+        
+        // Handle special cases
+        if (obj.html) return obj.html;
+        if (obj.text) return escapeHtml(obj.text);
+        
+        // Create a definition list
+        let html = '<dl class="response-object">';
+        for (const [key, value] of Object.entries(obj)) {
+            if (key.startsWith('_') || value === null || value === undefined) continue;
+            
+            html += `<dt>${escapeHtml(key)}</dt>`;
+            
+            if (typeof value === 'object') {
+                html += `<dd>${formatJsonResponse(value)}</dd>`;
+            } else {
+                html += `<dd>${escapeHtml(String(value))}</dd>`;
+            }
+        }
+        html += '</dl>';
+        
+        // Add object styles
+        addObjectStyles();
+        
+        return html;
+    }
+
+    // Format markdown text into HTML
+    function formatMarkdownResponse(markdown) {
+        if (!markdown) return '';
+        
+        // Parse markdown
+        let html = markdown;
+        
+        // Special handling for notes sections (starting with ### Notes or something similar)
+        if (markdown.includes('### Notes') || markdown.includes('## Notes') || 
+            markdown.includes('# Notes') || markdown.includes('```')) {
+            // Process just the notes section better
+            html = processNotesSection(markdown);
+        }
+        
+        // Check if there's a table in the content
+        const hasTable = markdown.includes('|') && markdown.split('\n').filter(line => line.trim().startsWith('|')).length >= 2;
+        
+        if (hasTable) {
+            // Extract the first table only to prevent duplicates
+            const tableLines = markdown.split('\n').filter(line => line.trim().startsWith('|'));
+            
+            // Find where the table ends - usually after a blank line or non-table line
+            let tableEndIndex = 0;
+            for (let i = 0; i < tableLines.length; i++) {
+                if (i > 0 && (tableLines[i].trim() === '' || !tableLines[i].trim().startsWith('|'))) {
+                    tableEndIndex = i;
+                    break;
+                }
+            }
+            
+            // Get only the first table if we found the end
+            const uniqueTableLines = tableEndIndex > 0 ? tableLines.slice(0, tableEndIndex) : tableLines;
+            
+            // Process table with our custom function
+            const processedTable = processMarkdownTable(uniqueTableLines);
+            
+            // Replace all table content with our processed table
+            // First create a regex that matches the entire table block
+            const tableRegex = new RegExp(
+                uniqueTableLines.map(line => escapeRegExp(line)).join('\\s*\\n\\s*'), 
+                'g'
+            );
+            
+            html = html.replace(tableRegex, processedTable);
+            
+            // Remove any potential duplicate tables
+            const remainingTableLines = html.split('\n').filter(line => 
+                line.trim().startsWith('|') && !uniqueTableLines.includes(line)
+            );
+            
+            if (remainingTableLines.length > 0) {
+                // Create a regex to match any remaining tables
+                const remainingTableRegex = new RegExp(
+                    '\\|.+\\|\\s*\\n\\s*\\|[-:\\s|]+\\|\\s*\\n(\\s*\\|.+\\|\\s*\\n)+', 
+                    'g'
+                );
+                
+                // Find the first match and keep it, remove other matches
+                let foundFirstMatch = false;
+                html = html.replace(remainingTableRegex, match => {
+                    if (!foundFirstMatch) {
+                        foundFirstMatch = true;
+                        return match;
+                    }
+                    return '';
+                });
+            }
+        }
+        
+        // Process non-table markdown elements
+        html = processGeneralMarkdown(html);
+        
+        // Add markdown styles
+        addMarkdownStyles();
+        
+        return html;
+    }
+
+    // Helper function to process general markdown
+    function processGeneralMarkdown(text) {
+        let processed = text
+            // Headers
+            .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+            .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+            .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+            
+            // Emphasis
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/__(.*?)__/g, '<strong>$1</strong>')
+            .replace(/_(.*?)_/g, '<em>$1</em>')
+            
+            // Lists
+            .replace(/^\s*[-*]\s+(.*?)$/gm, '<li>$1</li>')
+            .replace(/^\s*\d+\.\s+(.*?)$/gm, '<li>$1</li>')
+            
+            // Code blocks
+            .replace(/```(?:\w+)?\n([\s\S]*?)```/g, '<pre class="code-block"><code>$1</code></pre>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            
+            // Links
+            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="response-link">$1</a>')
+            
+            // Paragraphs
+            .replace(/\n\s*\n/g, '</p><p>');
+        
+        // Clean up list items
+        if (processed.includes('<li>')) {
+            processed = processed.replace(/<li>[\s\S]*?<\/li>/g, function(match) {
+                return '<ul class="response-list">' + match + '</ul>';
+            }).replace(/<\/ul><ul class="response-list">/g, '');
+        }
+        
+        // Wrap in paragraphs if needed
+        if (!processed.trim().startsWith('<')) {
+            processed = '<p>' + processed + '</p>';
+        }
+        
+        return processed;
+    }
+
+    // Special handling for notes sections
+    function processNotesSection(text) {
+        // First clean up hashtags that are used as notes markers
+        let processed = text.replace(/^[\s#]+Notes:?[\s-]*/im, '<div class="notes-section"><h3>Notes:</h3>');
+        
+        // Look for other patterns that might indicate notes or comments
+        if (!processed.includes('<div class="notes-section">')) {
+            processed = processed.replace(/^[\s#]+.*(notes|comments|observations).*:?[\s-]*/im, 
+                '<div class="notes-section"><h3>Notes:</h3>');
+        }
+        
+        // Handle important points marked with hashtags/pound signs
+        processed = processed.replace(/(?:^|\n)[\s]*#+[\s]*(.*?)(?:\n|$)/g, function(match, content) {
+            if (content.toLowerCase().includes('note') || 
+                content.toLowerCase().includes('important') || 
+                content.toLowerCase().includes('key point')) {
+                return `\n<h3>${content}</h3>\n`;
+            }
+            return match;
+        });
+        
+        // Special handling for notes with dashes or asterisks as bullet points
+        processed = processed.replace(/(?:^|\n)[\s]*-[\s]*(.*?)(?:\n|$)/g, '<div class="note-point">• $1</div>');
+        processed = processed.replace(/(?:^|\n)[\s]*\*[\s]*(.*?)(?:\n|$)/g, '<div class="note-point">• $1</div>');
+        
+        // Special handling for patterns like "- **Keyword Intent**:"
+        processed = processed.replace(/(?:^|\n)[\s]*-[\s]*\*\*(.*?)\*\*:[\s]*(.*?)(?:\n|$)/g, 
+            '<div class="note-item"><span class="note-label">$1:</span> $2</div>');
+        
+        // Add closing div if we opened a notes section
+        if (processed.includes('<div class="notes-section">') && !processed.includes('</div>')) {
+            processed += '</div>';
+        }
+        
+        // Add appropriate styles
+        addNotesStyles();
+        
+        return processed;
+    }
+
+    // Function to process markdown tables
+    function processMarkdownTable(tableLines) {
+        if (!tableLines || tableLines.length < 2) return '';
+        
+        // Create HTML table
+        let table = '<table class="md-table">';
+        
+        // Process header
+        const headerRow = tableLines[0];
+        const headerCells = headerRow.split('|').slice(1, -1);
+        table += '<thead><tr>';
+        headerCells.forEach(cell => {
+            table += `<th>${escapeHtml(cell.trim())}</th>`;
+        });
+        table += '</tr></thead>';
+        
+        // Skip separator row (row 1)
+        const dataRows = tableLines.slice(2);
+        
+        // Process data rows
+        table += '<tbody>';
+        dataRows.forEach(row => {
+            // Skip empty rows or non-table rows
+            if (!row.trim() || !row.trim().startsWith('|')) return;
+            
+            const cells = row.split('|').slice(1, -1);
+            table += '<tr>';
+            cells.forEach(cell => {
+                table += `<td>${escapeHtml(cell.trim())}</td>`;
+            });
+            table += '</tr>';
+        });
+        table += '</tbody></table>';
+        
+        // Add table styles
+        addResponseTableStyles();
+        
+        return table;
+    }
+
+    // Add styles for notes sections
+    function addNotesStyles() {
+        if (!document.getElementById('notes-style')) {
+            const style = document.createElement('style');
+            style.id = 'notes-style';
+            style.textContent = `
+                .notes-section {
+                    margin: 15px 0;
+                    padding: 15px;
+                    background: rgba(14, 165, 233, 0.1);
+                    border-left: 4px solid var(--accent-blue, #0ea5e9);
+                    border-radius: 8px;
+                }
+                .notes-section h3 {
+                    color: var(--accent-blue, #0ea5e9);
+                    margin-top: 0;
+                    font-size: 1.1em;
+                }
+                .note-point {
+                    margin: 8px 0;
+                    line-height: 1.5;
+                    display: flex;
+                    align-items: flex-start;
+                }
+                .note-point:before {
+                    content: "•";
+                    color: var(--accent-blue, #0ea5e9);
+                    font-weight: bold;
+                    display: inline-block;
+                    width: 1em;
+                    margin-left: -1em;
+                }
+                .note-item {
+                    margin: 10px 0;
+                    line-height: 1.5;
+                }
+                .note-label {
+                    font-weight: bold;
+                    color: var(--accent-blue, #0ea5e9);
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    // Add styles for tables
+    function addResponseTableStyles() {
+        if (!document.getElementById('response-table-style')) {
+            const style = document.createElement('style');
+            style.id = 'response-table-style';
+            style.textContent = `
+                .response-table, .md-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 12px 0;
+                    font-size: 0.9em;
+                    background: rgba(7, 89, 133, 0.15);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                }
+                .response-table th, .response-table td,
+                .md-table th, .md-table td {
+                    padding: 10px 15px;
+                    text-align: left;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                }
+                .response-table th, .md-table th {
+                    background-color: rgba(14, 165, 233, 0.25);
+                    color: #fff;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    font-size: 0.8em;
+                    letter-spacing: 1px;
+                }
+                .response-table tr:hover, .md-table tr:hover {
+                    background-color: rgba(255, 255, 255, 0.05);
+                }
+                .response-table tr:last-child td, .md-table tr:last-child td {
+                    border-bottom: none;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    // Add styles for objects
+    function addObjectStyles() {
+        if (!document.getElementById('response-object-style')) {
+            const style = document.createElement('style');
+            style.id = 'response-object-style';
+            style.textContent = `
+                .response-object {
+                    margin: 12px 0;
+                    padding: 0;
+                    background: rgba(7, 89, 133, 0.15);
+                    border-radius: 8px;
+                    padding: 12px;
+                }
+                .response-object dt {
+                    font-weight: bold;
+                    color: var(--accent-blue, #0ea5e9);
+                    margin-top: 10px;
+                    font-size: 0.9em;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    padding-bottom: 4px;
+                }
+                .response-object dd {
+                    margin-left: 0;
+                    margin-top: 6px;
+                    margin-bottom: 12px;
+                    line-height: 1.5;
+                }
+                .response-list {
+                    margin: 10px 0;
+                    padding-left: 20px;
+                }
+                .response-list li {
+                    margin-bottom: 6px;
+                }
+                .response-link {
+                    color: var(--accent-blue, #0ea5e9);
+                    text-decoration: none;
+                    border-bottom: 1px dotted var(--accent-blue, #0ea5e9);
+                }
+                .response-link:hover {
+                    opacity: 0.8;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    // Add styles for markdown
+    function addMarkdownStyles() {
+        if (!document.getElementById('markdown-style')) {
+            const style = document.createElement('style');
+            style.id = 'markdown-style';
+            style.textContent = `
+                .code-block {
+                    background: rgba(0, 0, 0, 0.3);
+                    border-radius: 5px;
+                    padding: 12px;
+                    margin: 12px 0;
+                    overflow-x: auto;
+                    font-family: 'Fira Code', monospace, Consolas, 'Courier New';
+                    font-size: 0.9em;
+                    border-left: 3px solid var(--accent-blue, #0ea5e9);
+                }
+                code {
+                    font-family: 'Fira Code', monospace, Consolas, 'Courier New';
+                    background: rgba(0, 0, 0, 0.2);
+                    padding: 2px 5px;
+                    border-radius: 3px;
+                    font-size: 0.9em;
+                }
+                h1, h2, h3 {
+                    color: var(--accent-blue, #0ea5e9);
+                    margin: 15px 0 10px 0;
+                }
+                h1 { font-size: 1.6em; }
+                h2 { font-size: 1.3em; }
+                h3 { font-size: 1.1em; }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Helper function to escape regex special characters
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 }); 
