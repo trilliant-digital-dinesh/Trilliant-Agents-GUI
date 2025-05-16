@@ -30,9 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Track active chat
     let activeChat = null;
     
-    // Initialize Calendar Form elements
-    const uploadDocumentBtn = document.getElementById('upload-document-btn');
-    const documentUploadInput = document.getElementById('document-upload');
+    // Initialize Calendar Form elements - we don't need document upload anymore
+    // const uploadDocumentBtn = document.getElementById('upload-document-btn');
+    // const documentUploadInput = document.getElementById('document-upload');
     const calendarInputsForm = document.getElementById('calendar-inputs-form');
     const submitCalendarInputsBtn = document.getElementById('submit-calendar-inputs-btn');
     
@@ -77,10 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Set up Calendar Form event listeners
-    if (uploadDocumentBtn && documentUploadInput) {
-        uploadDocumentBtn.addEventListener('click', handleDocumentUpload);
-    }
+    // Set up Calendar Form event listeners - we've removed the document upload step
+    // if (uploadDocumentBtn && documentUploadInput) {
+    //     uploadDocumentBtn.addEventListener('click', handleDocumentUpload);
+    // }
     
     if (submitCalendarInputsBtn) {
         submitCalendarInputsBtn.addEventListener('click', submitCalendarInputs);
@@ -170,14 +170,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const chatWindow = chatInput.closest('.agent-chat');
         const chatContent = chatWindow.querySelector('.chat-content');
         const messageText = chatInput.value.trim();
+        const sendBtn = chatInputContainer.querySelector('.chat-send-btn');
         
         if (messageText) {
-            // Create user message
+            // Disable input and button while processing
+            chatInput.disabled = true;
+            chatInput.style.opacity = '0.6';
+            sendBtn.disabled = true;
+            sendBtn.style.opacity = '0.6';
+            
+            // Create user message with preserved formatting
             const userMessage = document.createElement('div');
             userMessage.className = 'user-message';
             userMessage.innerHTML = `
                 <div class="user-avatar">👤</div>
-                <div class="message-content">${messageText}</div>
+                <div class="message-content"><pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">${messageText}</pre></div>
             `;
             
             chatContent.appendChild(userMessage);
@@ -234,33 +241,56 @@ document.addEventListener('DOMContentLoaded', () => {
             chatContent.appendChild(typingIndicator);
             chatContent.scrollTop = chatContent.scrollHeight;
             
+            // Function to re-enable input when response is complete
+            const enableInput = () => {
+                chatInput.disabled = false;
+                chatInput.style.opacity = '1';
+                sendBtn.disabled = false;
+                sendBtn.style.opacity = '1';
+                chatInput.focus();
+            };
+            
             // Connect to n8n webhook for ICP agent
             if (agentType === 'icp') {
-                analyzeWebsite(messageText, chatWindow, chatContent);
+                analyzeWebsite(messageText, chatWindow, chatContent)
+                    .then(() => enableInput())
+                    .catch(() => enableInput());
             } 
             else if (agentType === 'topicresearch') {
                 // Connect to topic research webhook
-                sendTopicResearch(messageText, chatWindow, chatContent, typingIndicator);
+                sendTopicResearch(messageText, chatWindow, chatContent, typingIndicator)
+                    .then(() => enableInput())
+                    .catch(() => enableInput());
             }
             else if (agentType === 'keyword') {
                 // For keyword agent, use similar approach as topic research
-                sendKeywordResearch(messageText, chatWindow, chatContent, typingIndicator);
+                sendKeywordResearch(messageText, chatWindow, chatContent, typingIndicator)
+                    .then(() => enableInput())
+                    .catch(() => enableInput());
             }
             else if (agentType === 'smmcompetitor') {
                 // Connect to SMM competitor webhook
-                sendSMMCompetitor(messageText, chatWindow, chatContent, typingIndicator);
+                sendSMMCompetitor(messageText, chatWindow, chatContent, typingIndicator)
+                    .then(() => enableInput())
+                    .catch(() => enableInput());
             }
             else if (agentType === 'competitor') {
                 // Redirect to SMM competitor webhook for consistency
-                sendCompetitorAnalysis(messageText, chatWindow, chatContent, typingIndicator);
+                sendCompetitorAnalysis(messageText, chatWindow, chatContent, typingIndicator)
+                    .then(() => enableInput())
+                    .catch(() => enableInput());
             }
             else if (agentType === 'seocompetitor') {
                 // Connect to SEO competitor webhook
-                sendSEOCompetitor(messageText, chatWindow, chatContent, typingIndicator);
+                sendSEOCompetitor(messageText, chatWindow, chatContent, typingIndicator)
+                    .then(() => enableInput())
+                    .catch(() => enableInput());
             }
             else {
                 // For other agent types, use simulation
                 simulateAgentResponse(agentType, messageText, typingIndicator, chatContent, agentEmoji);
+                // For simulated responses, enable after a delay to match the typing simulation
+                setTimeout(enableInput, 2000);
             }
         }
     }
@@ -280,8 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Different responses based on agent type
             if (agentType === 'calendar') {
-                // For the calendar agent, ask to upload document first instead of previous responses
-                responseText = 'Please upload a document to get started with your social media calendar planning.';
+                // For the calendar agent, directly show the form instead of asking for a document upload
+                responseText = 'Please fill out the form below to generate your social media calendar:';
                 
                 agentResponse.innerHTML = `
                     <div class="agent-avatar">${agentEmoji}</div>
@@ -290,6 +320,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 chatContent.appendChild(agentResponse);
                 chatContent.scrollTop = chatContent.scrollHeight;
+                
+                // Directly show the inputs form
+                if (calendarInputsForm) {
+                    calendarInputsForm.style.display = 'block';
+                }
+                
                 return;
             } else if (agentType === 'onpage') {
                 // For the on-page SEO agent, ask to upload excel file
@@ -966,93 +1002,100 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to analyze website with n8n
     function analyzeWebsite(websiteUrl, chatWindow, chatContent) {
-        // Add typing indicator if it doesn't exist
-        let typingIndicator = chatContent.querySelector('.typing-indicator');
-        if (!typingIndicator) {
-            typingIndicator = document.createElement('div');
-            typingIndicator.className = 'agent-message typing-indicator';
-            
-            typingIndicator.innerHTML = `
-                <div class="agent-avatar">👥</div>
-                <div class="message-content">
-                    <div class="typing-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
+        // Return a Promise that resolves when the response is complete
+        return new Promise((resolve, reject) => {
+            // Add typing indicator if it doesn't exist
+            let typingIndicator = chatContent.querySelector('.typing-indicator');
+            if (!typingIndicator) {
+                typingIndicator = document.createElement('div');
+                typingIndicator.className = 'agent-message typing-indicator';
+                
+                typingIndicator.innerHTML = `
+                    <div class="agent-avatar">👥</div>
+                    <div class="message-content">
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
                     </div>
-                </div>
-            `;
-            
-            chatContent.appendChild(typingIndicator);
-            chatContent.scrollTop = chatContent.scrollHeight;
-        }
-        
-        // Call n8n webhook - using the production URL
-        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/ICP-SEO';
-        
-        // Prepare the data to send to n8n
-        const requestData = {
-            chatInput: websiteUrl
-        };
-        
-        console.log('Sending data to n8n:', requestData);
-        
-        // Send request to n8n
-        fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('ICP Data:', data.output); // Log the output as per the example
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
+                `;
+                
+                chatContent.appendChild(typingIndicator);
+                chatContent.scrollTop = chatContent.scrollHeight;
             }
             
-            // Add agent response from n8n
-            const agentMessage = document.createElement('div');
-            agentMessage.className = 'agent-message';
+            // Call n8n webhook - using the production URL
+            const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/ICP-SEO';
             
-            // Extract the text from the response - check for data.output first
-            let responseContent = data.output || data.json?.text || data.text || 'Analysis complete! I\'ve identified the ideal customer profile for your business.';
-            const responseText = formatResponse(responseContent);
+            // Prepare the data to send to n8n
+            const requestData = {
+                chatInput: websiteUrl
+            };
             
-            agentMessage.innerHTML = `
-                <div class="agent-avatar">👥</div>
-                <div class="message-content">${responseText}</div>
-            `;
+            console.log('Sending data to n8n:', requestData);
             
-            chatContent.appendChild(agentMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
-        })
-        .catch(error => {
-            console.error('Error connecting to n8n:', error);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Show error message
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'agent-message';
-            errorMessage.innerHTML = `
-                <div class="agent-avatar">👥</div>
-                <div class="message-content">Sorry, I encountered an error connecting to the n8n service. Please try again later.</div>
-            `;
-            
-            chatContent.appendChild(errorMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
+            // Send request to n8n
+            fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('ICP Data:', data.output); // Log the output as per the example
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Add agent response from n8n
+                const agentMessage = document.createElement('div');
+                agentMessage.className = 'agent-message';
+                
+                // Extract the text from the response - check for data.output first
+                let responseContent = data.output || data.json?.text || data.text || 'Analysis complete! I\'ve identified the ideal customer profile for your business.';
+                const responseText = formatResponse(responseContent);
+                
+                agentMessage.innerHTML = `
+                    <div class="agent-avatar">👥</div>
+                    <div class="message-content">${responseText}</div>
+                `;
+                
+                chatContent.appendChild(agentMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                
+                resolve(); // Resolve the promise when complete
+            })
+            .catch(error => {
+                console.error('Error connecting to n8n:', error);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Show error message
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'agent-message';
+                errorMessage.innerHTML = `
+                    <div class="agent-avatar">👥</div>
+                    <div class="message-content">Sorry, I encountered an error connecting to the n8n service. Please try again later.</div>
+                `;
+                
+                chatContent.appendChild(errorMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                
+                reject(error); // Reject the promise on error
+            });
         });
     }
     
@@ -1068,92 +1111,97 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to handle Topic Research Agent
     function sendTopicResearch(messageText, chatWindow, chatContent, typingIndicator) {
-        // Call n8n webhook - using the provided webhook URL
-        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/topic-research';
-        
-        // Prepare the data to send to n8n - simplified to just use the message
-        const requestData = {
-            message: messageText,
-            userInput: {
-                query: messageText,
-                timestamp: new Date().toISOString()
-            }
-        };
-        
-        console.log('Sending data to Topic Research Agent:', requestData);
-        
-        // Send request to n8n
-        fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => {
-            console.log('Webhook response status:', response.status);
-            return response.json().catch(e => {
-                console.error('Error parsing JSON:', e);
-                return { error: 'Invalid JSON response' };
-            });
-        })
-        .then(data => {
-            console.log('Topic Research Data:', data);
+        // Return a Promise that resolves when the response is complete
+        return new Promise((resolve, reject) => {
+            // Call n8n webhook - using the provided webhook URL
+            const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/topic-research';
             
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
+            // Prepare the data to send to n8n - simplified to just use the message
+            const requestData = {
+                message: messageText,
+                userInput: {
+                    query: messageText,
+                    timestamp: new Date().toISOString()
+                }
+            };
             
-            // Add agent response from n8n
-            const agentMessage = document.createElement('div');
-            agentMessage.className = 'agent-message';
+            console.log('Sending data to Topic Research Agent:', requestData);
             
-            // Extract the response text from the data
-            let responseText;
-            
-            if (data.error || data.code) {
-                // If there's an error or the webhook returned an error code
-                console.error('Webhook error:', data);
+            // Send request to n8n
+            fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                console.log('Webhook response status:', response.status);
+                return response.json().catch(e => {
+                    console.error('Error parsing JSON:', e);
+                    return { error: 'Invalid JSON response' };
+                });
+            })
+            .then(data => {
+                console.log('Topic Research Data:', data);
                 
-                // Fallback to simulated response
-                responseText = getSimulatedResponse(messageText);
-            } else {
-                // Use the response exactly as received from the webhook
-                const responseContent = data.response || data.output || data.text || getSimulatedResponse(messageText);
-                responseText = formatResponse(responseContent);
-            }
-            
-            agentMessage.innerHTML = `
-                <div class="agent-avatar">📚</div>
-                <div class="message-content">${responseText}</div>
-            `;
-            
-            chatContent.appendChild(agentMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
-        })
-        .catch(error => {
-            console.error('Error connecting to topic research webhook:', error);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Show fallback response with simulated content
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'agent-message';
-            
-            const fallbackResponse = getSimulatedResponse(messageText);
-            const formattedResponse = formatResponse(fallbackResponse);
-            
-            errorMessage.innerHTML = `
-                <div class="agent-avatar">📚</div>
-                <div class="message-content">${formattedResponse}</div>
-            `;
-            
-            chatContent.appendChild(errorMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Add agent response from n8n
+                const agentMessage = document.createElement('div');
+                agentMessage.className = 'agent-message';
+                
+                // Extract the response text from the data
+                let responseText;
+                
+                if (data.error || data.code) {
+                    // If there's an error or the webhook returned an error code
+                    console.error('Webhook error:', data);
+                    
+                    // Fallback to simulated response
+                    responseText = getSimulatedResponse(messageText);
+                } else {
+                    // Use the response exactly as received from the webhook
+                    const responseContent = data.response || data.output || data.text || getSimulatedResponse(messageText);
+                    responseText = formatResponse(responseContent);
+                }
+                
+                agentMessage.innerHTML = `
+                    <div class="agent-avatar">📚</div>
+                    <div class="message-content">${responseText}</div>
+                `;
+                
+                chatContent.appendChild(agentMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                resolve(); // Resolve the promise when complete
+            })
+            .catch(error => {
+                console.error('Error connecting to topic research webhook:', error);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Show fallback response with simulated content
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'agent-message';
+                
+                const fallbackResponse = getSimulatedResponse(messageText);
+                const formattedResponse = formatResponse(fallbackResponse);
+                
+                errorMessage.innerHTML = `
+                    <div class="agent-avatar">📚</div>
+                    <div class="message-content">${formattedResponse}</div>
+                `;
+                
+                chatContent.appendChild(errorMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                reject(error); // Reject the promise on error
+            });
         });
     }
 
@@ -1229,247 +1277,262 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to handle Keyword Agent
     function sendKeywordResearch(messageText, chatWindow, chatContent, typingIndicator) {
-        // Use the specified webhook URL
-        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/Keyword-SEO';
-        
-        // Prepare the data to send to n8n - just pass the raw message
-        const requestData = {
-            chatInput: messageText  // Using the same format as the ICP agent
-        };
-        
-        console.log('Sending data to Keyword Agent:', requestData);
-        
-        // Send request to the webhook
-        fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => {
-            console.log('Keyword Agent webhook response status:', response.status);
-            return response.json().catch(e => {
-                console.error('Error parsing JSON:', e);
-                return { error: 'Invalid JSON response' };
+        // Return a Promise that resolves when the response is complete
+        return new Promise((resolve, reject) => {
+            // Use the specified webhook URL
+            const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/Keyword-SEO';
+            
+            // Prepare the data to send to n8n - just pass the raw message
+            const requestData = {
+                chatInput: messageText  // Using the same format as the ICP agent
+            };
+            
+            console.log('Sending data to Keyword Agent:', requestData);
+            
+            // Send request to the webhook
+            fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                console.log('Keyword Agent webhook response status:', response.status);
+                return response.json().catch(e => {
+                    console.error('Error parsing JSON:', e);
+                    return { error: 'Invalid JSON response' };
+                });
+            })
+            .then(data => {
+                console.log('Keyword Agent Data:', data);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Add agent response from webhook
+                const agentMessage = document.createElement('div');
+                agentMessage.className = 'agent-message';
+                
+                // Use whatever response comes from the webhook
+                let responseText;
+                
+                if (data.error || data.code) {
+                    // If there's an error or the webhook returned an error code
+                    console.error('Webhook error:', data);
+                    responseText = 'Sorry, I encountered an error processing your request. Please try again later.';
+                } else {
+                    // Use the response exactly as received from the webhook
+                    const responseContent = data.output || data.response || data.text || JSON.stringify(data);
+                    responseText = formatResponse(responseContent);
+                }
+                
+                agentMessage.innerHTML = `
+                    <div class="agent-avatar">🔑</div>
+                    <div class="message-content">${responseText}</div>
+                `;
+                
+                chatContent.appendChild(agentMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                resolve(); // Resolve the promise when complete
+            })
+            .catch(error => {
+                console.error('Error connecting to keyword webhook:', error);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Show error message
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'agent-message';
+                errorMessage.innerHTML = `
+                    <div class="agent-avatar">🔑</div>
+                    <div class="message-content">Sorry, I encountered an error connecting to the keyword research service. Please try again later.</div>
+                `;
+                
+                chatContent.appendChild(errorMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                reject(error); // Reject the promise on error
             });
-        })
-        .then(data => {
-            console.log('Keyword Agent Data:', data);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Add agent response from webhook
-            const agentMessage = document.createElement('div');
-            agentMessage.className = 'agent-message';
-            
-            // Use whatever response comes from the webhook
-            let responseText;
-            
-            if (data.error || data.code) {
-                // If there's an error or the webhook returned an error code
-                console.error('Webhook error:', data);
-                responseText = 'Sorry, I encountered an error processing your request. Please try again later.';
-            } else {
-                // Use the response exactly as received from the webhook
-                const responseContent = data.output || data.response || data.text || JSON.stringify(data);
-                responseText = formatResponse(responseContent);
-            }
-            
-            agentMessage.innerHTML = `
-                <div class="agent-avatar">🔑</div>
-                <div class="message-content">${responseText}</div>
-            `;
-            
-            chatContent.appendChild(agentMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
-        })
-        .catch(error => {
-            console.error('Error connecting to keyword webhook:', error);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Show error message
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'agent-message';
-            errorMessage.innerHTML = `
-                <div class="agent-avatar">🔑</div>
-                <div class="message-content">Sorry, I encountered an error connecting to the keyword research service. Please try again later.</div>
-            `;
-            
-            chatContent.appendChild(errorMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
         });
     }
 
     // Function to handle SMM Competitor Agent
     function sendSMMCompetitor(messageText, chatWindow, chatContent, typingIndicator) {
-        // Use the specified webhook URL
-        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SMM-Compitator';
-        
-        // Prepare the data to send to n8n - just pass the raw message
-        const requestData = {
-            chatInput: messageText  // Using the same format as other agents
-        };
-        
-        console.log('Sending data to SMM Competitor Agent:', requestData);
-        
-        // Send request to the webhook
-        fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => {
-            console.log('SMM Competitor webhook response status:', response.status);
-            return response.json().catch(e => {
-                console.error('Error parsing JSON:', e);
-                return { error: 'Invalid JSON response' };
+        // Return a Promise that resolves when the response is complete
+        return new Promise((resolve, reject) => {
+            // Use the specified webhook URL
+            const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SMM-Compitator';
+            
+            // Prepare the data to send to n8n - just pass the raw message
+            const requestData = {
+                chatInput: messageText  // Using the same format as other agents
+            };
+            
+            console.log('Sending data to SMM Competitor Agent:', requestData);
+            
+            // Send request to the webhook
+            fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                console.log('SMM Competitor webhook response status:', response.status);
+                return response.json().catch(e => {
+                    console.error('Error parsing JSON:', e);
+                    return { error: 'Invalid JSON response' };
+                });
+            })
+            .then(data => {
+                console.log('SMM Competitor Data:', data);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Add agent response from webhook
+                const agentMessage = document.createElement('div');
+                agentMessage.className = 'agent-message';
+                
+                // Use whatever response comes from the webhook
+                let responseText;
+                
+                if (data.error || data.code) {
+                    // If there's an error or the webhook returned an error code
+                    console.error('Webhook error:', data);
+                    responseText = 'Sorry, I encountered an error processing your request. Please try again later.';
+                } else {
+                    // Use the response exactly as received from the webhook
+                    const responseContent = data.output || data.response || data.text || JSON.stringify(data);
+                    responseText = formatResponse(responseContent);
+                }
+                
+                agentMessage.innerHTML = `
+                    <div class="agent-avatar">👁️</div>
+                    <div class="message-content">${responseText}</div>
+                `;
+                
+                chatContent.appendChild(agentMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                resolve(); // Resolve the promise when complete
+            })
+            .catch(error => {
+                console.error('Error connecting to SMM Competitor webhook:', error);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Show error message
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'agent-message';
+                errorMessage.innerHTML = `
+                    <div class="agent-avatar">👁️</div>
+                    <div class="message-content">Sorry, I encountered an error connecting to the SMM Competitor service. Please try again later.</div>
+                `;
+                
+                chatContent.appendChild(errorMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                reject(error); // Reject the promise on error
             });
-        })
-        .then(data => {
-            console.log('SMM Competitor Data:', data);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Add agent response from webhook
-            const agentMessage = document.createElement('div');
-            agentMessage.className = 'agent-message';
-            
-            // Use whatever response comes from the webhook
-            let responseText;
-            
-            if (data.error || data.code) {
-                // If there's an error or the webhook returned an error code
-                console.error('Webhook error:', data);
-                responseText = 'Sorry, I encountered an error processing your request. Please try again later.';
-            } else {
-                // Use the response exactly as received from the webhook
-                const responseContent = data.output || data.response || data.text || JSON.stringify(data);
-                responseText = formatResponse(responseContent);
-            }
-            
-            agentMessage.innerHTML = `
-                <div class="agent-avatar">👁️</div>
-                <div class="message-content">${responseText}</div>
-            `;
-            
-            chatContent.appendChild(agentMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
-        })
-        .catch(error => {
-            console.error('Error connecting to SMM Competitor webhook:', error);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Show error message
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'agent-message';
-            errorMessage.innerHTML = `
-                <div class="agent-avatar">👁️</div>
-                <div class="message-content">Sorry, I encountered an error connecting to the SMM Competitor service. Please try again later.</div>
-            `;
-            
-            chatContent.appendChild(errorMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
         });
     }
 
     // Function to handle original Competitor Agent
     function sendCompetitorAnalysis(messageText, chatWindow, chatContent, typingIndicator) {
-        // Redirect to the same webhook as SMM Competitor Agent for consistency
-        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SMM-Compitator';
-        
-        // Prepare the data to send to n8n - just pass the raw message
-        const requestData = {
-            chatInput: messageText  // Using the same format as other agents
-        };
-        
-        console.log('Sending data to Competitor Agent (redirected to SMM Competitor):', requestData);
-        
-        // Send request to the webhook
-        fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => {
-            console.log('Competitor Agent webhook response status:', response.status);
-            return response.json().catch(e => {
-                console.error('Error parsing JSON:', e);
-                return { error: 'Invalid JSON response' };
+        // Return a Promise that resolves when the response is complete
+        return new Promise((resolve, reject) => {
+            // Redirect to the same webhook as SMM Competitor Agent for consistency
+            const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SMM-Compitator';
+            
+            // Prepare the data to send to n8n - just pass the raw message
+            const requestData = {
+                chatInput: messageText  // Using the same format as other agents
+            };
+            
+            console.log('Sending data to Competitor Agent (redirected to SMM Competitor):', requestData);
+            
+            // Send request to the webhook
+            fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                console.log('Competitor Agent webhook response status:', response.status);
+                return response.json().catch(e => {
+                    console.error('Error parsing JSON:', e);
+                    return { error: 'Invalid JSON response' };
+                });
+            })
+            .then(data => {
+                console.log('Competitor Agent Data:', data);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Add agent response from webhook
+                const agentMessage = document.createElement('div');
+                agentMessage.className = 'agent-message';
+                
+                // Use whatever response comes from the webhook
+                let responseText;
+                
+                if (data.error || data.code) {
+                    // If there's an error from the webhook, fall back to simulation
+                    console.error('Webhook error:', data);
+                    responseText = simulateCompetitorResponse(messageText);
+                } else {
+                    // Use the response exactly as received from the webhook
+                    const responseContent = data.output || data.response || data.text || JSON.stringify(data);
+                    responseText = formatResponse(responseContent);
+                }
+                
+                agentMessage.innerHTML = `
+                    <div class="agent-avatar">🔍</div>
+                    <div class="message-content">${responseText}</div>
+                `;
+                
+                chatContent.appendChild(agentMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                resolve(); // Resolve the promise when complete
+            })
+            .catch(error => {
+                console.error('Error connecting to Competitor Agent webhook:', error);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Fall back to simulation
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'agent-message';
+                
+                const fallbackResponse = simulateCompetitorResponse(messageText);
+                
+                errorMessage.innerHTML = `
+                    <div class="agent-avatar">🔍</div>
+                    <div class="message-content">${fallbackResponse}</div>
+                `;
+                
+                chatContent.appendChild(errorMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                reject(error); // Reject the promise on error
             });
-        })
-        .then(data => {
-            console.log('Competitor Agent Data:', data);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Add agent response from webhook
-            const agentMessage = document.createElement('div');
-            agentMessage.className = 'agent-message';
-            
-            // Use whatever response comes from the webhook
-            let responseText;
-            
-            if (data.error || data.code) {
-                // If there's an error from the webhook, fall back to simulation
-                console.error('Webhook error:', data);
-                responseText = simulateCompetitorResponse(messageText);
-            } else {
-                // Use the response exactly as received from the webhook
-                const responseContent = data.output || data.response || data.text || JSON.stringify(data);
-                responseText = formatResponse(responseContent);
-            }
-            
-            agentMessage.innerHTML = `
-                <div class="agent-avatar">🔍</div>
-                <div class="message-content">${responseText}</div>
-            `;
-            
-            chatContent.appendChild(agentMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
-        })
-        .catch(error => {
-            console.error('Error connecting to Competitor Agent webhook:', error);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Fall back to simulation
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'agent-message';
-            
-            const fallbackResponse = simulateCompetitorResponse(messageText);
-            
-            errorMessage.innerHTML = `
-                <div class="agent-avatar">🔍</div>
-                <div class="message-content">${fallbackResponse}</div>
-            `;
-            
-            chatContent.appendChild(errorMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
         });
     }
     
@@ -1486,85 +1549,90 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to handle SEO Competitor Agent
     function sendSEOCompetitor(messageText, chatWindow, chatContent, typingIndicator) {
-        // Use the specified webhook URL for SEO competitor analysis
-        const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SEO-Compitator';
-        
-        // Prepare the data to send to n8n - just pass the raw message
-        const requestData = {
-            chatInput: messageText  // Using the same format as other agents
-        };
-        
-        console.log('Sending data to SEO Competitor Agent:', requestData);
-        
-        // Send request to the webhook
-        fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => {
-            console.log('SEO Competitor webhook response status:', response.status);
-            return response.json().catch(e => {
-                console.error('Error parsing JSON:', e);
-                return { error: 'Invalid JSON response' };
+        // Return a Promise that resolves when the response is complete
+        return new Promise((resolve, reject) => {
+            // Use the specified webhook URL for SEO competitor analysis
+            const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SEO-Compitator';
+            
+            // Prepare the data to send to n8n - just pass the raw message
+            const requestData = {
+                chatInput: messageText  // Using the same format as other agents
+            };
+            
+            console.log('Sending data to SEO Competitor Agent:', requestData);
+            
+            // Send request to the webhook
+            fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                console.log('SEO Competitor webhook response status:', response.status);
+                return response.json().catch(e => {
+                    console.error('Error parsing JSON:', e);
+                    return { error: 'Invalid JSON response' };
+                });
+            })
+            .then(data => {
+                console.log('SEO Competitor Data:', data);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Add agent response from webhook
+                const agentMessage = document.createElement('div');
+                agentMessage.className = 'agent-message';
+                
+                // Use whatever response comes from the webhook
+                let responseText;
+                
+                if (data.error || data.code) {
+                    // If there's an error or the webhook returned an error code
+                    console.error('Webhook error:', data);
+                    responseText = simulateSEOCompetitorResponse(messageText);
+                } else {
+                    // Use the response exactly as received from the webhook
+                    const responseContent = data.output || data.response || data.text || JSON.stringify(data);
+                    responseText = formatResponse(responseContent);
+                }
+                
+                agentMessage.innerHTML = `
+                    <div class="agent-avatar">📊</div>
+                    <div class="message-content">${responseText}</div>
+                `;
+                
+                chatContent.appendChild(agentMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                resolve(); // Resolve the promise when complete
+            })
+            .catch(error => {
+                console.error('Error connecting to SEO Competitor webhook:', error);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Fall back to simulation
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'agent-message';
+                
+                const fallbackResponse = simulateSEOCompetitorResponse(messageText);
+                
+                errorMessage.innerHTML = `
+                    <div class="agent-avatar">📊</div>
+                    <div class="message-content">${fallbackResponse}</div>
+                `;
+                
+                chatContent.appendChild(errorMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                reject(error); // Reject the promise on error
             });
-        })
-        .then(data => {
-            console.log('SEO Competitor Data:', data);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Add agent response from webhook
-            const agentMessage = document.createElement('div');
-            agentMessage.className = 'agent-message';
-            
-            // Use whatever response comes from the webhook
-            let responseText;
-            
-            if (data.error || data.code) {
-                // If there's an error or the webhook returned an error code
-                console.error('Webhook error:', data);
-                responseText = simulateSEOCompetitorResponse(messageText);
-            } else {
-                // Use the response exactly as received from the webhook
-                const responseContent = data.output || data.response || data.text || JSON.stringify(data);
-                responseText = formatResponse(responseContent);
-            }
-            
-            agentMessage.innerHTML = `
-                <div class="agent-avatar">📊</div>
-                <div class="message-content">${responseText}</div>
-            `;
-            
-            chatContent.appendChild(agentMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
-        })
-        .catch(error => {
-            console.error('Error connecting to SEO Competitor webhook:', error);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Fall back to simulation
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'agent-message';
-            
-            const fallbackResponse = simulateSEOCompetitorResponse(messageText);
-            
-            errorMessage.innerHTML = `
-                <div class="agent-avatar">📊</div>
-                <div class="message-content">${fallbackResponse}</div>
-            `;
-            
-            chatContent.appendChild(errorMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
         });
     }
     
@@ -1578,6 +1646,84 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!responseData) return 'No response received.';
         
         try {
+            // Special case for SEO Competitor Analysis tables
+            if (typeof responseData === 'string') {
+                // Check for this specific table format with the double pipe issue
+                if ((responseData.includes('| Keyword | Position | Volume | Difficulty | Traffic | Intent |') ||
+                    responseData.includes('| Keyword | Position | Volume | Difficulty | Traffic | Intent | |')) &&
+                    (responseData.includes('|-------') || responseData.includes('|--------|'))) {
+                    // Fix the specific issue with the double pipe in the separator line
+                    const fixedData = responseData.replace(/\|\s*\|[-]+\|/g, '|---------|');
+                    
+                    // Get all table lines
+                    let tableLines = fixedData.split('\n').filter(line => 
+                        line.trim().startsWith('|') && 
+                        (line.includes('Keyword') || line.includes('Position') || line.includes('Intent') || 
+                         line.includes('-------') || /\|\s*\w+/.test(line))
+                    );
+                    
+                    if (tableLines.length >= 3) {
+                        // Fix any formatting issues in the table lines
+                        tableLines = tableLines.map(line => {
+                            // Replace double pipes with single pipes where needed
+                            return line.replace(/\|\s*\|/g, '|');
+                        });
+                        
+                        // Get the text parts that are not part of the table
+                        const lines = responseData.split('\n');
+                        const textBefore = [];
+                        const textAfter = [];
+                        
+                        let tableStarted = false;
+                        let tableEnded = false;
+                        
+                        for (const line of lines) {
+                            if (!tableStarted && line.trim().startsWith('|')) {
+                                tableStarted = true;
+                                continue;
+                            }
+                            
+                            if (tableStarted && !tableEnded && !line.trim().startsWith('|') && line.trim() !== '') {
+                                tableEnded = true;
+                            }
+                            
+                            if (!tableStarted) {
+                                textBefore.push(line);
+                            } else if (tableEnded) {
+                                textAfter.push(line);
+                            }
+                        }
+                        
+                        // Process the table
+                        const processedTable = processMarkdownTable(tableLines);
+                        
+                        // Combine everything back together
+                        let result = '';
+                        if (textBefore.length > 0) {
+                            result += `<div class="text-before">${formatTextContent(textBefore.join('\n'))}</div>`;
+                        }
+                        
+                        result += processedTable;
+                        
+                        if (textAfter.length > 0) {
+                            result += `<div class="text-after">${formatTextContent(textAfter.join('\n'))}</div>`;
+                        }
+                        
+                        return result;
+                    }
+                }
+                
+                // Original special case for SEO table format
+                if (responseData.includes('| Keyword | Position | Volume |') && 
+                    responseData.includes('Intent |')) {
+                    // Direct table processing without paragraph wrapping
+                    const tableLines = responseData.split('\n').filter(line => line.trim().startsWith('|'));
+                    if (tableLines.length >= 3) {
+                        return processMarkdownTable(tableLines);
+                    }
+                }
+            }
+            
             // If it's a string, check if it's JSON, Markdown or plain text
             if (typeof responseData === 'string') {
                 // Check if it has table markers
@@ -1596,8 +1742,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         responseData.includes('```')) {
                         return formatMarkdownResponse(responseData);
                     }
-                    // Plain text, return as is with proper line breaks
-                    return responseData.replace(/\n/g, '<br>');
+                    // Plain text, return as is with preserved line breaks (without paragraph wrapping)
+                    return `<pre style="white-space: pre-wrap; font-family: inherit;">${responseData}</pre>`;
                 }
             }
             
@@ -1608,6 +1754,12 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error formatting response:', e);
             return String(responseData).replace(/\n/g, '<br>');
         }
+    }
+    
+    // Helper function to format text content
+    function formatTextContent(text) {
+        if (!text) return '';
+        return text.replace(/\n/g, '<br>');
     }
 
     // Format JSON responses
@@ -1864,17 +2016,90 @@ document.addEventListener('DOMContentLoaded', () => {
     function processMarkdownTable(tableLines) {
         if (!tableLines || tableLines.length < 2) return '';
         
-        // Create HTML table
-        let table = '<table class="md-table">';
+        // Create HTML table with class for SEO style tables
+        let tableCssClass = 'md-table';
+        const isKeywordTable = tableLines.some(line => 
+            (line.includes('Keyword') && 
+            line.includes('Position') && 
+            line.includes('Volume') && 
+            line.includes('Intent')) ||
+            (line.includes('Keyword') && 
+            line.includes('Position') && 
+            line.includes('Volume') && 
+            line.includes('Difficulty') && 
+            line.includes('Traffic') && 
+            line.includes('Intent'))
+        );
+            
+        if (isKeywordTable) {
+            tableCssClass += ' seo-keyword-table';
+            // Add custom CSS for SEO tables
+            if (!document.getElementById('seo-table-style')) {
+                const style = document.createElement('style');
+                style.id = 'seo-table-style';
+                style.textContent = `
+                    .seo-keyword-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 24px 0;
+                        font-size: 0.95em;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                        border-radius: 8px;
+                        overflow: hidden;
+                    }
+                    .seo-keyword-table th {
+                        background-color: rgba(14, 165, 233, 0.35) !important;
+                        font-weight: 600 !important;
+                        padding: 12px 15px !important;
+                    }
+                    .seo-keyword-table td {
+                        padding: 12px 15px !important;
+                    }
+                    .seo-keyword-table tr:nth-child(even) {
+                        background: rgba(255, 255, 255, 0.03);
+                    }
+                    .seo-keyword-table tr:hover {
+                        background: rgba(14, 165, 233, 0.1) !important;
+                    }
+                    .text-before, .text-after {
+                        margin: 1em 0;
+                        line-height: 1.5;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
         
-        // Process header
-        const headerRow = tableLines[0];
-        const headerCells = headerRow.split('|').slice(1, -1);
-        table += '<thead><tr>';
-        headerCells.forEach(cell => {
-            table += `<th>${escapeHtml(cell.trim())}</th>`;
-        });
-        table += '</tr></thead>';
+        let table = `<table class="${tableCssClass}">`;
+        
+        // Process header - fix any issues with the header row
+        const headerRow = tableLines[0].replace(/\|\s*\|/g, '|'); // Fix double pipes
+        // Split and process header cells, ensuring we have values
+        const headerCells = headerRow.split('|')
+            .filter(cell => cell.trim().length > 0) // Remove empty cells
+            .map(cell => cell.trim());
+        
+        // If no valid header cells found (rare case), try a different approach
+        if (headerCells.length < 1) {
+            const separatorLine = tableLines[1];
+            // Count the number of column separators to determine columns
+            const columnCount = (separatorLine.match(/\|/g) || []).length - 1;
+            
+            // Create generic headers
+            const genericHeaders = Array(columnCount).fill(0).map((_, i) => `Column ${i+1}`);
+            
+            table += '<thead><tr>';
+            genericHeaders.forEach(header => {
+                table += `<th>${header}</th>`;
+            });
+            table += '</tr></thead>';
+        } else {
+            table += '<thead><tr>';
+            headerCells.forEach(cell => {
+                table += `<th>${escapeHtml(cell)}</th>`;
+            });
+            table += '</tr></thead>';
+        }
         
         // Skip separator row (row 1)
         const dataRows = tableLines.slice(2);
@@ -1885,10 +2110,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // Skip empty rows or non-table rows
             if (!row.trim() || !row.trim().startsWith('|')) return;
             
-            const cells = row.split('|').slice(1, -1);
+            // Fix any double pipes in the row
+            const fixedRow = row.replace(/\|\s*\|/g, '|');
+            
+            // Split cells, but keep only non-empty ones
+            const cells = fixedRow.split('|')
+                .filter(cell => cell !== null && cell !== undefined && cell !== '')
+                .map(cell => cell.trim());
+            
+            if (cells.length < 1) return; // Skip if no valid cells
+            
             table += '<tr>';
             cells.forEach(cell => {
-                table += `<td>${escapeHtml(cell.trim())}</td>`;
+                table += `<td>${escapeHtml(cell)}</td>`;
             });
             table += '</tr>';
         });
@@ -2085,118 +2319,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to handle document upload for the Calendar Agent
     function handleDocumentUpload() {
+        // This function is no longer needed as we're showing the form directly
+        // But we'll keep it as a no-op in case it's called from somewhere else
+        console.log('Document upload bypassed, showing form directly');
+        
         const chatWindow = document.getElementById('calendar-agent-chat');
         const chatContent = chatWindow.querySelector('.chat-content');
         
-        if (!documentUploadInput.files || documentUploadInput.files.length === 0) {
-            // Create error message if no file is selected
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'agent-message';
-            errorMessage.innerHTML = `
-                <div class="agent-avatar">📅</div>
-                <div class="message-content">Please select a document to upload.</div>
-            `;
-            chatContent.appendChild(errorMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
-            return;
+        // Just show the form directly
+        if (calendarInputsForm) {
+            calendarInputsForm.style.display = 'block';
         }
         
-        const file = documentUploadInput.files[0];
-        console.log('Calendar Agent: Selected file:', file.name, 'Type:', file.type, 'Size:', file.size);
-        
-        // Add user message showing the file being uploaded
-        const userMessage = document.createElement('div');
-        userMessage.className = 'user-message';
-        userMessage.innerHTML = `
-            <div class="user-avatar">👤</div>
-            <div class="message-content">Uploading file: ${file.name}</div>
-        `;
-        chatContent.appendChild(userMessage);
-        
-        const formData = new FormData();
-        
-        // Add the file with the key 'file' which is commonly expected by APIs
-        formData.append('file', file);
-        // Also add with 'document' to maintain compatibility with existing code
-        formData.append('document', file);
-        
-        // Add typing indicator
-        const typingIndicator = document.createElement('div');
-        typingIndicator.className = 'agent-message typing-indicator';
-        typingIndicator.innerHTML = `
+        // Add a message if needed
+        const agentMessage = document.createElement('div');
+        agentMessage.className = 'agent-message';
+        agentMessage.innerHTML = `
             <div class="agent-avatar">📅</div>
             <div class="message-content">
-                <div class="typing-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
+                Please fill out the form below to generate your social media calendar.
             </div>
         `;
-        chatContent.appendChild(typingIndicator);
+        
+        chatContent.appendChild(agentMessage);
         chatContent.scrollTop = chatContent.scrollHeight;
-        
-        // Send document to webhook
-        const uploadWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/upload';
-        console.log('Calendar Agent: Sending file to webhook:', uploadWebhookUrl);
-        
-        fetch(uploadWebhookUrl, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            console.log('Calendar Agent: Document upload response status:', response.status);
-            return response.json().catch(e => {
-                console.error('Calendar Agent: Error parsing JSON:', e);
-                return { error: 'Invalid JSON response' };
-            });
-        })
-        .then(data => {
-            console.log('Calendar Agent: Document upload response data:', data);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Add success message
-            const successMessage = document.createElement('div');
-            successMessage.className = 'agent-message';
-            successMessage.innerHTML = `
-                <div class="agent-avatar">📅</div>
-                <div class="message-content">
-                    Document "${file.name}" has been uploaded successfully! Please fill out the form below to continue.
-                </div>
-            `;
-            chatContent.appendChild(successMessage);
-            
-            // Show the inputs form
-            if (calendarInputsForm) {
-                calendarInputsForm.style.display = 'block';
-            }
-            
-            chatContent.scrollTop = chatContent.scrollHeight;
-        })
-        .catch(error => {
-            console.error('Calendar Agent: Error uploading document:', error);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Show error message
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'agent-message';
-            errorMessage.innerHTML = `
-                <div class="agent-avatar">📅</div>
-                <div class="message-content">
-                    There was an error uploading your document. Please try again.
-                </div>
-            `;
-            chatContent.appendChild(errorMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
-        });
     }
     
     // Function to submit calendar form inputs

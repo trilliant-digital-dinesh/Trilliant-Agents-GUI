@@ -6,6 +6,7 @@
     <title>Trilliant Digital - Marketing Automation Dashboard</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/layout-fixes.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -253,22 +254,12 @@
                 <div class="agent-message">
                     <div class="agent-avatar">📅</div>
                     <div class="message-content">
-                        Please upload a document to get started with your social media calendar planning.
+                        Please fill out the form below to generate your social media calendar.
                     </div>
                 </div>
-                <div class="form-group">
-                    <form id="calendar-upload-form" enctype="multipart/form-data">
-                        <label for="document-upload" class="upload-label">
-                            <div class="upload-icon">📄</div>
-                            <span>Select Document</span>
-                        </label>
-                        <input type="file" id="document-upload" class="file-input" accept="*">
-                        <button type="button" id="upload-document-btn" class="neon-button">Upload Document</button>
-                    </form>
-                </div>
                 
-                <!-- This form will be shown after document upload -->
-                <div id="calendar-inputs-form" class="form-group" style="display: none;">
+                <!-- This form will be shown directly, without document upload -->
+                <div id="calendar-inputs-form" class="form-group">
                     <h4>SMM Calender</h4>
                     <p>Fill out the form</p>
                     
