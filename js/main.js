@@ -225,6 +225,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'onpage':
                     agentEmoji = '🔍';
                     break;
+                case 'contentgen':
+                    agentEmoji = '✏️';
+                    break;
             }
             
             typingIndicator.innerHTML = `
@@ -283,6 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (agentType === 'seocompetitor') {
                 // Connect to SEO competitor webhook
                 sendSEOCompetitor(messageText, chatWindow, chatContent, typingIndicator)
+                    .then(() => enableInput())
+                    .catch(() => enableInput());
+            }
+            else if (agentType === 'contentgen') {
+                // Connect to Content Generation Agent webhook
+                sendContentGeneration(messageText, chatWindow, chatContent, typingIndicator)
                     .then(() => enableInput())
                     .catch(() => enableInput());
             }
@@ -1551,15 +1560,85 @@ document.addEventListener('DOMContentLoaded', () => {
     function sendSEOCompetitor(messageText, chatWindow, chatContent, typingIndicator) {
         // Return a Promise that resolves when the response is complete
         return new Promise((resolve, reject) => {
-            // Use the specified webhook URL for SEO competitor analysis
             const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/SEO-Compitator';
+            const requestData = { chatInput: messageText };
+            console.log('[SEO] Sending data to SEO Competitor Agent:', requestData);
+
+            fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                console.log('[SEO] Webhook response:', response);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json().catch(e => {
+                    console.error('[SEO] Error parsing JSON:', e);
+                    return { error: 'Invalid JSON response' };
+                });
+            })
+            .then(data => {
+                console.log('[SEO] Webhook data:', data);
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                const agentMessage = document.createElement('div');
+                agentMessage.className = 'agent-message';
+                let responseText;
+                if (data.error || data.code) {
+                    console.error('[SEO] Webhook error:', data);
+                    responseText = simulateSEOCompetitorResponse(messageText);
+                } else {
+                    const responseContent = data.output || data.response || data.text || JSON.stringify(data);
+                    responseText = formatResponse(responseContent);
+                }
+                agentMessage.innerHTML = `
+                    <div class="agent-avatar">📊</div>
+                    <div class="message-content">${responseText}</div>
+                `;
+                chatContent.appendChild(agentMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                resolve();
+            })
+            .catch(error => {
+                console.error('[SEO] Error connecting to SEO Competitor webhook:', error);
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'agent-message';
+                const fallbackResponse = simulateSEOCompetitorResponse(messageText);
+                errorMessage.innerHTML = `
+                    <div class="agent-avatar">📊</div>
+                    <div class="message-content">${fallbackResponse}</div>
+                `;
+                chatContent.appendChild(errorMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                reject(error);
+            });
+        });
+    }
+    
+    // Helper function to generate simulated SEO competitor responses
+    function simulateSEOCompetitorResponse(messageText) {
+        return `I've analyzed your competitors and found they're ranking for keywords you're missing. Top opportunities: "automated social posting" (low competition), "marketing dashboard tools" (medium traffic), and "social analytics platform" (high conversion potential).`;
+    }
+    
+    // Function to handle Content Generation Agent
+    function sendContentGeneration(messageText, chatWindow, chatContent, typingIndicator) {
+        // Return a Promise that resolves when the response is complete
+        return new Promise((resolve, reject) => {
+            // Use the specified webhook URL provided by the user
+            const n8nWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/Content-Master-Agent-1';
             
             // Prepare the data to send to n8n - just pass the raw message
             const requestData = {
                 chatInput: messageText  // Using the same format as other agents
             };
             
-            console.log('Sending data to SEO Competitor Agent:', requestData);
+            console.log('[Content] Sending data to Content Generation Agent:', requestData);
             
             // Send request to the webhook
             fetch(n8nWebhookUrl, {
@@ -1570,14 +1649,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(requestData)
             })
             .then(response => {
-                console.log('SEO Competitor webhook response status:', response.status);
+                console.log('[Content] Webhook response status:', response.status);
                 return response.json().catch(e => {
-                    console.error('Error parsing JSON:', e);
+                    console.error('[Content] Error parsing JSON:', e);
                     return { error: 'Invalid JSON response' };
                 });
             })
             .then(data => {
-                console.log('SEO Competitor Data:', data);
+                console.log('[Content] Webhook data:', data);
                 
                 // Remove typing indicator
                 if (typingIndicator && typingIndicator.parentNode) {
@@ -1593,8 +1672,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (data.error || data.code) {
                     // If there's an error or the webhook returned an error code
-                    console.error('Webhook error:', data);
-                    responseText = simulateSEOCompetitorResponse(messageText);
+                    console.error('[Content] Webhook error:', data);
+                    responseText = 'Sorry, I encountered an error processing your request. Please try again later.';
                 } else {
                     // Use the response exactly as received from the webhook
                     const responseContent = data.output || data.response || data.text || JSON.stringify(data);
@@ -1602,7 +1681,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 agentMessage.innerHTML = `
-                    <div class="agent-avatar">📊</div>
+                    <div class="agent-avatar">✏️</div>
                     <div class="message-content">${responseText}</div>
                 `;
                 
@@ -1611,22 +1690,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 resolve(); // Resolve the promise when complete
             })
             .catch(error => {
-                console.error('Error connecting to SEO Competitor webhook:', error);
+                console.error('[Content] Error connecting to Content Generation webhook:', error);
                 
                 // Remove typing indicator
                 if (typingIndicator && typingIndicator.parentNode) {
                     chatContent.removeChild(typingIndicator);
                 }
                 
-                // Fall back to simulation
+                // Show error message
                 const errorMessage = document.createElement('div');
                 errorMessage.className = 'agent-message';
-                
-                const fallbackResponse = simulateSEOCompetitorResponse(messageText);
-                
                 errorMessage.innerHTML = `
-                    <div class="agent-avatar">📊</div>
-                    <div class="message-content">${fallbackResponse}</div>
+                    <div class="agent-avatar">✏️</div>
+                    <div class="message-content">Sorry, I encountered an error connecting to the content generation service. Please try again later.</div>
                 `;
                 
                 chatContent.appendChild(errorMessage);
@@ -1634,11 +1710,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 reject(error); // Reject the promise on error
             });
         });
-    }
-    
-    // Helper function to generate simulated SEO competitor responses
-    function simulateSEOCompetitorResponse(messageText) {
-        return `I've analyzed your competitors and found they're ranking for keywords you're missing. Top opportunities: "automated social posting" (low competition), "marketing dashboard tools" (medium traffic), and "social analytics platform" (high conversion potential).`;
     }
 
     // Helper functions for formatting responses
@@ -2565,4 +2636,4 @@ document.addEventListener('DOMContentLoaded', () => {
             chatContent.scrollTop = chatContent.scrollHeight;
         });
     }
-}); 
+});

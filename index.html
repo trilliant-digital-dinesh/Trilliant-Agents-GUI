@@ -161,17 +161,16 @@
             <section id="content-agent" class="agent-section">
                 <h2 class="section-title">Content <span class="accent">Agent</span></h2>
                 <div class="panel-container">
-                    <!-- Content Coming Soon -->
-                    <div class="agent-list-item disabled" data-agent="content">
+                    <!-- Content Generation Agent -->
+                    <div class="agent-list-item" data-agent="contentgen">
                         <div class="agent-list-header">
                             <div>
                                 <h3>
                                     <div class="agent-icon">✏️</div>
-                                    Content Agent
+                                    Content Generation Master Agent
                                 </h3>
-                                <div class="agent-list-subtext">Coming Soon - Content Strategy AI to power your marketing</div>
+                                <div class="agent-list-subtext">Generate high-quality content for your marketing needs</div>
                             </div>
-                            <div class="coming-soon-badge">Coming Soon</div>
                         </div>
                     </div>
                 </div>
@@ -560,10 +559,52 @@
                 </button>
             </div>
         </div>
+        
+        <!-- Content Generation Agent Chat -->
+        <div id="contentgen-agent-chat" class="agent-chat" data-agent="contentgen">
+            <div class="chat-header">
+                <h3>
+                    <div class="agent-icon">✏️</div>
+                    Content Generation Agent
+                </h3>
+                <div class="chat-controls">
+                    <button class="minimize-chat-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="2" viewBox="0 0 14 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M1 1h12"></path>
+                        </svg>
+                    </button>
+                    <button class="close-chat-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M18 6L6 18M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-content">
+                <div class="chat-welcome">
+                    <h3>Welcome to Content Generation Agent</h3>
+                    <p>I'll help you create high-quality content for your marketing needs. Just tell me what type of content you need, and I'll generate it for you.</p>
+                </div>
+                <div class="agent-message">
+                    <div class="agent-avatar">✏️</div>
+                    <div class="message-content">
+                        What type of content would you like me to generate? For example, you can ask for blog posts, social media captions, email newsletters, product descriptions, etc.
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" placeholder="Type your message...">
+                <button class="chat-send-btn">
+                    <svg class="chat-send-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
     </div>
 
     <script src="js/animations.js"></script>
     <script src="js/chart.min.js"></script>
     <script src="js/main.js"></script>
 </body>
-</html> 
+</html>
