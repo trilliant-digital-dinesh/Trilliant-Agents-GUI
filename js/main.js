@@ -83,8 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // }
     
     if (submitCalendarInputsBtn) {
-        submitCalendarInputsBtn.addEventListener('click', submitCalendarInputs);
-    }
+    submitCalendarInputsBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent default form submission
+        submitCalendarInputs(); // Call the function to handle form submission
+    });
+}
     
     // Set up On-Page SEO event listeners
     if (uploadOnpageBtn && onpageDocumentInput) {
