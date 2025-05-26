@@ -30,11 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Track active chat
     let activeChat = null;
     
-    // Initialize Calendar Form elements - we don't need document upload anymore
-    // const uploadDocumentBtn = document.getElementById('upload-document-btn');
-    // const documentUploadInput = document.getElementById('document-upload');
-    const calendarInputsForm = document.getElementById('calendar-inputs-form');
-    const submitCalendarInputsBtn = document.getElementById('submit-calendar-inputs-btn');
+    // Calendar Agent now uses direct chat input instead of a form
+    // No need to initialize form elements anymore
     
     // Initialize On-Page SEO elements
     const uploadOnpageBtn = document.getElementById('upload-onpage-btn');
@@ -77,17 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Set up Calendar Form event listeners - we've removed the document upload step
-    // if (uploadDocumentBtn && documentUploadInput) {
-    //     uploadDocumentBtn.addEventListener('click', handleDocumentUpload);
-    // }
-    
-    if (submitCalendarInputsBtn) {
-    submitCalendarInputsBtn.addEventListener('click', (e) => {
-        e.preventDefault(); // Prevent default form submission
-        submitCalendarInputs(); // Call the function to handle form submission
-    });
-}
+    // Calendar Agent now uses direct chat input instead of a form
+    // No need to set up form event listeners anymore
     
     // Set up On-Page SEO event listeners
     if (uploadOnpageBtn && onpageDocumentInput) {
@@ -298,6 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(() => enableInput())
                     .catch(() => enableInput());
             }
+            else if (agentType === 'calendar') {
+                // Connect to Calendar Agent webhook
+                sendCalendarMessage(messageText, chatWindow, chatContent, typingIndicator)
+                    .then(() => enableInput())
+                    .catch(() => enableInput());
+            }
             else {
                 // For other agent types, use simulation
                 simulateAgentResponse(agentType, messageText, typingIndicator, chatContent, agentEmoji);
@@ -333,11 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatContent.appendChild(agentResponse);
                 chatContent.scrollTop = chatContent.scrollHeight;
                 
-                // Directly show the inputs form
-                if (calendarInputsForm) {
-                    calendarInputsForm.style.display = 'block';
-                }
-                
+                // Calendar Agent now uses direct chat input instead of a form
                 return;
             } else if (agentType === 'onpage') {
                 // For the on-page SEO agent, ask to upload excel file
@@ -2391,138 +2381,83 @@ document.addEventListener('DOMContentLoaded', () => {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    // Function to handle document upload for the Calendar Agent
-    function handleDocumentUpload() {
-        // This function is no longer needed as we're showing the form directly
-        // But we'll keep it as a no-op in case it's called from somewhere else
-        console.log('Document upload bypassed, showing form directly');
-        
-        const chatWindow = document.getElementById('calendar-agent-chat');
-        const chatContent = chatWindow.querySelector('.chat-content');
-        
-        // Just show the form directly
-        if (calendarInputsForm) {
-            calendarInputsForm.style.display = 'block';
-        }
-        
-        // Add a message if needed
-        const agentMessage = document.createElement('div');
-        agentMessage.className = 'agent-message';
-        agentMessage.innerHTML = `
-            <div class="agent-avatar">📅</div>
-            <div class="message-content">
-                Please fill out the form below to generate your social media calendar.
-            </div>
-        `;
-        
-        chatContent.appendChild(agentMessage);
-        chatContent.scrollTop = chatContent.scrollHeight;
-    }
-    
-    // Function to submit calendar form inputs
-    function submitCalendarInputs() {
-        const chatWindow = document.getElementById('calendar-agent-chat');
-        const chatContent = chatWindow.querySelector('.chat-content');
-        
-        // Get form values
-        const niche = document.getElementById('niche-input').value;
-        const company = document.getElementById('company-input').value;
-        const industry = document.getElementById('industry-input').value;
-        const main_products_or_services = document.getElementById('main-products-input').value;
-        const Competitors = document.getElementById('competitors-input').value;
-        const Special_considerations = document.getElementById('special-considerations-input').value;
-        
-        // Prepare form data
-        const formData = {
-            niche: niche,
-            company: company,
-            industry: industry,
-            main_products_or_services: main_products_or_services,
-            Competitors: Competitors,
-            Special_considerations: Special_considerations
-        };
-        
-        // Add typing indicator
-        const typingIndicator = document.createElement('div');
-        typingIndicator.className = 'agent-message typing-indicator';
-        typingIndicator.innerHTML = `
-            <div class="agent-avatar">📅</div>
-            <div class="message-content">
-                <div class="typing-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-        `;
-        chatContent.appendChild(typingIndicator);
-        chatContent.scrollTop = chatContent.scrollHeight;
-        
-        // Submit form data to webhook
-        const calendarInputWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/Calender';
-        
-        fetch(calendarInputWebhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(response => {
-            console.log('Calendar input response status:', response.status);
-            return response.json().catch(e => {
-                console.error('Error parsing JSON:', e);
-                return { error: 'Invalid JSON response' };
+    // Function to send messages to the Calendar Agent webhook
+    function sendCalendarMessage(messageText, chatWindow, chatContent, typingIndicator) {
+        // Return a Promise that resolves when the response is complete
+        return new Promise((resolve, reject) => {
+            // Use the specified webhook URL
+            const calendarWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/Calender';
+            
+            // Prepare the data to send to n8n - just pass the raw message
+            const requestData = {
+                chatInput: messageText  // Using the same format as other agents
+            };
+            
+            console.log('Sending data to Calendar Agent:', requestData);
+            
+            // Send request to the webhook
+            fetch(calendarWebhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                console.log('Calendar webhook response status:', response.status);
+                return response.json().catch(e => {
+                    console.error('Error parsing JSON:', e);
+                    return { error: 'Invalid JSON response' };
+                });
+            })
+            .then(data => {
+                console.log('Calendar webhook response:', data);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Add agent response with webhook response
+                const responseMessage = document.createElement('div');
+                responseMessage.className = 'agent-message';
+                
+                // Use the response from webhook or fallback to a default message
+                const responseContent = data.response || data.message || data.text || 
+                    'I\'ve processed your request. Is there anything else you\'d like to know?';
+                
+                responseMessage.innerHTML = `
+                    <div class="agent-avatar">📅</div>
+                    <div class="message-content">${formatResponse(responseContent)}</div>
+                `;
+                
+                chatContent.appendChild(responseMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                
+                resolve();
+            })
+            .catch(error => {
+                console.error('Error sending message to Calendar Agent:', error);
+                
+                // Remove typing indicator
+                if (typingIndicator && typingIndicator.parentNode) {
+                    chatContent.removeChild(typingIndicator);
+                }
+                
+                // Show error message
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'agent-message';
+                errorMessage.innerHTML = `
+                    <div class="agent-avatar">📅</div>
+                    <div class="message-content">
+                        There was an error processing your request. Please try again.
+                    </div>
+                `;
+                chatContent.appendChild(errorMessage);
+                chatContent.scrollTop = chatContent.scrollHeight;
+                
+                reject(error);
             });
-        })
-        .then(data => {
-            console.log('Calendar input response:', data);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Hide the form after submission
-            if (calendarInputsForm) {
-                calendarInputsForm.style.display = 'none';
-            }
-            
-            // Add success message with webhook response
-            const responseMessage = document.createElement('div');
-            responseMessage.className = 'agent-message';
-            
-            // Use the response from webhook or fallback to a default message
-            const responseContent = data.response || data.message || data.text || 
-                'Calender has been generated, please check your Google Sheet.';
-            
-            responseMessage.innerHTML = `
-                <div class="agent-avatar">📅</div>
-                <div class="message-content">${formatResponse(responseContent)}</div>
-            `;
-            
-            chatContent.appendChild(responseMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
-        })
-        .catch(error => {
-            console.error('Error submitting calendar inputs:', error);
-            
-            // Remove typing indicator
-            if (typingIndicator && typingIndicator.parentNode) {
-                chatContent.removeChild(typingIndicator);
-            }
-            
-            // Show error message
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'agent-message';
-            errorMessage.innerHTML = `
-                <div class="agent-avatar">📅</div>
-                <div class="message-content">
-                    There was an error processing your request. Please try again.
-                </div>
-            `;
-            chatContent.appendChild(errorMessage);
-            chatContent.scrollTop = chatContent.scrollHeight;
         });
     }
 
