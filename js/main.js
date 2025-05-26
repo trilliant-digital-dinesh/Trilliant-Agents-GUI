@@ -33,8 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Calendar Form elements - we don't need document upload anymore
     // const uploadDocumentBtn = document.getElementById('upload-document-btn');
     // const documentUploadInput = document.getElementById('document-upload');
-    const calendarInputsForm = document.getElementById('calendar-inputs-form');
-    const submitCalendarInputsBtn = document.getElementById('submit-calendar-inputs-btn');
+    
     
     // Initialize On-Page SEO elements
     const uploadOnpageBtn = document.getElementById('upload-onpage-btn');
@@ -82,12 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     //     uploadDocumentBtn.addEventListener('click', handleDocumentUpload);
     // }
     
-    if (submitCalendarInputsBtn) {
-    submitCalendarInputsBtn.addEventListener('click', (e) => {
-        e.preventDefault(); // Prevent default form submission
-        submitCalendarInputs(); // Call the function to handle form submission
-    });
-}
+    
     
     // Set up On-Page SEO event listeners
     if (uploadOnpageBtn && onpageDocumentInput) {
