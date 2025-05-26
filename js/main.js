@@ -2422,12 +2422,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const chatContent = chatWindow.querySelector('.chat-content');
         
         // Get form values
-        const niche = document.getElementById('company-input').value;
-        const company = document.getElementById('niche-input').value;
-        const industry = document.getElementById('audience-input').value;
-        const main_products_or_services = document.getElementById('tone-input').value;
-        const Competitors = document.getElementById('platforms-input').value;
-        const Special_considerations = document.getElementById('duration-input').value;
+        const niche = document.getElementById('niche-input').value;
+        const company = document.getElementById('company-input').value;
+        const industry = document.getElementById('industry-input').value;
+        const main_products_or_services = document.getElementById('main-products-input').value;
+        const Competitors = document.getElementById('competitors-input').value;
+        const Special_considerations = document.getElementById('special-considerations-input').value;
         
         // Prepare form data
         const formData = {
