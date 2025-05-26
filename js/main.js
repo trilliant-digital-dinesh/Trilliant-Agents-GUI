@@ -2422,21 +2422,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const chatContent = chatWindow.querySelector('.chat-content');
         
         // Get form values
-        const niche = document.getElementById('niche-input').value;
-        const audience = document.getElementById('audience-input').value;
-        const tone = document.getElementById('tone-input').value;
-        const platforms = document.getElementById('platforms-input').value;
-        const duration = document.getElementById('duration-input').value;
-        const company = document.getElementById('company-input').value;
+        const niche = document.getElementById('company-input').value;
+        const company = document.getElementById('niche-input').value;
+        const industry = document.getElementById('audience-input').value;
+        const main_products_or_services = document.getElementById('tone-input').value;
+        const Competitors = document.getElementById('platforms-input').value;
+        const Special_considerations = document.getElementById('duration-input').value;
         
         // Prepare form data
         const formData = {
             niche: niche,
-            audience: audience,
-            tone: tone,
-            platforms: platforms,
-            duration: duration,
-            company: company
+            company: company,
+            industry: industry,
+            main_products_or_services: main_products_or_services,
+            Competitors: Competitors,
+            Special_considerations: Special_considerations
         };
         
         // Add typing indicator
@@ -2456,7 +2456,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatContent.scrollTop = chatContent.scrollHeight;
         
         // Submit form data to webhook
-        const calendarInputWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/Calender-Input';
+        const calendarInputWebhookUrl = 'https://primary-clgf-test.up.railway.app/webhook/Calender';
         
         fetch(calendarInputWebhookUrl, {
             method: 'POST',
