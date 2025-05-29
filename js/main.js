@@ -2422,9 +2422,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const responseMessage = document.createElement('div');
                 responseMessage.className = 'agent-message';
                 
-                // Use the response from webhook or fallback to a default message
-                const responseContent = data.response || data.message || data.text || 
-                    'I\'ve processed your request. Is there anything else you\'d like to know?';
+                // Extract content from the webhook response format
+                const content = data.content || {};
+                const caption = content.caption || '';
+                const visualDescription = content.visual_description || '';
+                const videoTimeline = content.video_timeline || '';
+                
+                // Combine the response content
+                const responseContent = `${caption}\n\n${visualDescription}\n\n${videoTimeline}`;
                 
                 responseMessage.innerHTML = `
                     <div class="agent-avatar">📅</div>
